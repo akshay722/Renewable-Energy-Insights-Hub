@@ -12,4 +12,4 @@ class User(BaseModel):
     is_admin = Column(Boolean, default=False)
     
     # Relationships
-    energy_data = relationship("EnergyConsumption", back_populates="user")
+    projects = relationship("Project", back_populates="user")

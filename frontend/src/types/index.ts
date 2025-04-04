@@ -15,6 +15,17 @@ export interface AuthState {
   error: string | null;
 }
 
+// Project types
+export interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  location?: string;
+  user_id: number;
+  created_at: string;
+  updated_at?: string;
+}
+
 // Energy data types
 export enum EnergySourceType {
   SOLAR = "solar",
@@ -32,7 +43,7 @@ export const isRenewableSource = (source: EnergySourceType): boolean => {
 
 export interface EnergyConsumptionData {
   id: number;
-  user_id: number;
+  project_id: number;
   timestamp: string;
   value_kwh: number;
   source_type: EnergySourceType;
@@ -42,6 +53,7 @@ export interface EnergyConsumptionData {
 
 export interface EnergyGenerationData {
   id: number;
+  project_id: number;
   timestamp: string;
   value_kwh: number;
   source_type: EnergySourceType;
@@ -60,6 +72,7 @@ export interface EnergySummary {
   renewable_percentage: number;
   start_date: string;
   end_date: string;
+  project_id?: number;
 }
 
 export interface DailyAggregateData {
@@ -77,6 +90,7 @@ export interface AggregatedEnergyData {
   daily_generation?: DailyAggregateData[];
   total_kwh: number;
   by_source: Record<string, number>;
+  by_project?: Record<string, number>;
   avg_efficiency?: number;
 }
 
@@ -105,4 +119,5 @@ export interface DateRangeFilter {
 
 export interface EnergyFilter extends DateRangeFilter {
   source_type?: EnergySourceType[];
+  project_id?: number;
 }

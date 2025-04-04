@@ -6,26 +6,57 @@ import {
   EnergySummary,
   InsightRecommendation,
   EnergyTrends,
+  Project,
 } from "../types";
 
 // Create axios instance with base URL and default headers
 const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL: "http://localhost:8000/api/v1",
+  // Add longer timeout for development
+  timeout: 10000,
 });
+
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error("API Error Response:", {
+        data: error.response.data,
+        status: error.response.status,
+        headers: error.response.headers,
+      });
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error("API No Response:", error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error("API Request Error:", error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
 
-    // Special handling for demo token
-    if (token === "demo-token") {
-      // For demo token, we'll skip adding the Authorization header
-      // This tells the backend to use the demo user account
-      config.headers["X-Demo-User"] = "true";
-    } else if (token) {
-      // Normal auth token handling
+    // Make sure headers object exists
+    if (!config.headers) {
+      config.headers = {};
+    }
+
+    // Add token to auth header if available
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // Add content type if not already set
+    if (!config.headers["Content-Type"] && !config.headers["content-type"]) {
+      config.headers["Content-Type"] = "application/json";
     }
 
     return config;
@@ -58,6 +89,41 @@ export const authApi = {
       password,
     });
     return response.data;
+  },
+};
+
+// Projects API
+export const projectsApi = {
+  getAll: async () => {
+    const response = await api.get("/projects");
+    return response.data;
+  },
+
+  getById: async (id: number) => {
+    const response = await api.get(`/projects/${id}`);
+    return response.data;
+  },
+
+  create: async (data: {
+    name: string;
+    description?: string;
+    location?: string;
+  }) => {
+    const response = await api.post("/projects", data);
+    return response.data;
+  },
+
+  update: async (
+    id: number,
+    data: { name?: string; description?: string; location?: string }
+  ) => {
+    const response = await api.put(`/projects/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number) => {
+    await api.delete(`/projects/${id}`);
+    return true;
   },
 };
 
@@ -157,23 +223,37 @@ export const generationApi = {
 
 // Insights API
 export const insightsApi = {
-  getSummary: async (startDate?: string, endDate?: string) => {
+  getSummary: async (
+    startDate?: string,
+    endDate?: string,
+    projectId?: number
+  ) => {
     const response = await api.get<EnergySummary>("/insights/summary", {
-      params: { start_date: startDate, end_date: endDate },
+      params: {
+        start_date: startDate,
+        end_date: endDate,
+        project_id: projectId,
+      },
     });
     return response.data;
   },
 
-  getRecommendations: async () => {
+  getRecommendations: async (projectId?: number) => {
     const response = await api.get<InsightRecommendation[]>(
-      "/insights/recommendations"
+      "/insights/recommendations",
+      {
+        params: { project_id: projectId },
+      }
     );
     return response.data;
   },
 
-  getTrends: async (months: number = 3) => {
+  getTrends: async (months: number = 3, projectId?: number) => {
     const response = await api.get<EnergyTrends>("/insights/trends", {
-      params: { months },
+      params: {
+        months,
+        project_id: projectId,
+      },
     });
     return response.data;
   },

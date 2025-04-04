@@ -3,6 +3,31 @@ from typing import Optional, List
 from datetime import datetime
 from models.energy_data import EnergySourceType
 
+# Project schemas
+class ProjectBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    location: Optional[str] = None
+
+class ProjectCreate(ProjectBase):
+    pass
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+
+class ProjectInDB(ProjectBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class Project(ProjectInDB):
+    pass
+
 # Base classes
 class EnergyConsumptionBase(BaseModel):
     timestamp: datetime
@@ -17,27 +42,29 @@ class EnergyGenerationBase(BaseModel):
 
 # Create schemas
 class EnergyConsumptionCreate(EnergyConsumptionBase):
-    user_id: Optional[int] = None
+    project_id: int
 
 class EnergyGenerationCreate(EnergyGenerationBase):
-    pass
+    project_id: int
 
 # Update schemas
 class EnergyConsumptionUpdate(BaseModel):
     timestamp: Optional[datetime] = None
     value_kwh: Optional[float] = None
     source_type: Optional[EnergySourceType] = None
+    project_id: Optional[int] = None
 
 class EnergyGenerationUpdate(BaseModel):
     timestamp: Optional[datetime] = None
     value_kwh: Optional[float] = None
     source_type: Optional[EnergySourceType] = None
     efficiency: Optional[float] = Field(None, ge=0, le=100)
+    project_id: Optional[int] = None
 
 # DB schemas
 class EnergyConsumptionInDB(EnergyConsumptionBase):
     id: int
-    user_id: int
+    project_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -45,6 +72,7 @@ class EnergyConsumptionInDB(EnergyConsumptionBase):
 
 class EnergyGenerationInDB(EnergyGenerationBase):
     id: int
+    project_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -62,6 +90,7 @@ class EnergyConsumptionFilter(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     source_type: Optional[List[EnergySourceType]] = None
+    project_id: Optional[int] = None
 
 class EnergyGenerationFilter(EnergyConsumptionFilter):
     pass
@@ -73,3 +102,4 @@ class EnergySummary(BaseModel):
     renewable_percentage: float
     start_date: datetime
     end_date: datetime
+    project_id: Optional[int] = None

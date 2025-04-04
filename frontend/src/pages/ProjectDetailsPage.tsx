@@ -19,7 +19,6 @@ import {
 import { useDateRange } from "../context/DateRangeContext";
 // Using global DateRangeContext
 import RecommendationCard from "../components/RecommendationCard";
-import EnergySummaryCard from "../components/EnergySummaryCard";
 import EnergyChart from "../components/charts/EnergyChart";
 import SourceDistributionChart from "../components/charts/SourceDistributionChart";
 import { parseISO } from "date-fns";

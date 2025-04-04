@@ -1,16 +1,16 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink } from "react-router-dom";
 
 interface SidebarProps {
-  isOpen: boolean
-  toggleSidebar: () => void
+  isOpen: boolean;
+  toggleSidebar: () => void;
 }
 
 const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
   // Navigation items
   const navItems = [
     {
-      name: 'Dashboard',
-      path: '/',
+      name: "Dashboard",
+      path: "/",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -29,8 +29,8 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
       ),
     },
     {
-      name: 'Energy Tracking',
-      path: '/energy-tracking',
+      name: "Projects",
+      path: "/projects",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -43,14 +43,14 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
           />
         </svg>
       ),
     },
     {
-      name: 'Insights',
-      path: '/insights',
+      name: "Insights",
+      path: "/insights",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -69,8 +69,8 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
       ),
     },
     {
-      name: 'Profile',
-      path: '/profile',
+      name: "Profile",
+      path: "/profile",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -88,7 +88,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
         </svg>
       ),
     },
-  ]
+  ];
 
   return (
     <>
@@ -103,7 +103,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex h-full flex-col overflow-y-auto">
@@ -151,13 +151,13 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                   className={({ isActive }) =>
                     `flex items-center px-4 py-2.5 text-base font-medium transition-colors duration-200 rounded-lg ${
                       isActive
-                        ? 'bg-primary-light/10 text-primary'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? "bg-primary-light/10 text-primary"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`
                   }
                   onClick={() => {
                     if (window.innerWidth < 768) {
-                      toggleSidebar()
+                      toggleSidebar();
                     }
                   }}
                 >
@@ -180,7 +180,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
         </div>
       </aside>
     </>
-  )
-}
+  );
+};
 
-export default Sidebar
+export default Sidebar;

@@ -19,11 +19,17 @@ def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
+    # Try to find user by email first
     user = db.query(User).filter(User.email == form_data.username).first()
+    
+    # If not found by email, try username (for flexibility)
+    if not user:
+        user = db.query(User).filter(User.username == form_data.username).first()
+        
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Incorrect username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -33,6 +39,11 @@ def login_access_token(
             user.id, expires_delta=access_token_expires
         ),
         "token_type": "bearer",
+        "user_id": user.id,
+        "email": user.email,
+        "username": user.username,
+        "is_active": user.is_active,
+        "is_admin": user.is_admin,
     }
 
 @router.post("/register", response_model=UserSchema)

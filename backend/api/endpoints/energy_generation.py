@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 import pandas as pd
 import logging
 
-from api.deps import get_db, get_current_active_user, get_optional_current_user
+from api.deps import get_db, get_current_active_user
 from models.user import User
-from models.energy_data import EnergyGeneration, EnergySourceType
+from models.energy_data import EnergyGeneration, EnergySourceType, Project
 
 logger = logging.getLogger(__name__)
 from schemas.energy import (
@@ -29,7 +29,20 @@ def create_energy_generation(
     """
     Create new energy generation record
     """
+    # Verify that the project belongs to the current user
+    project = db.query(Project).filter(
+        Project.id == data_in.project_id,
+        Project.user_id == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or does not belong to the user",
+        )
+    
     data = EnergyGeneration(
+        project_id=data_in.project_id,
         timestamp=data_in.timestamp,
         value_kwh=data_in.value_kwh,
         source_type=data_in.source_type,
@@ -48,20 +61,51 @@ def read_energy_generation(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     source_type: Optional[List[EnergySourceType]] = Query(None),
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    project_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Retrieve energy generation records
     """
     try:
-        query = db.query(EnergyGeneration)
+        # Get the user's projects
+        user_id = current_user.id if current_user else None
         
+        if user_id:
+            # Get projects for the authenticated user
+            user_projects = db.query(Project.id).filter(Project.user_id == user_id).all()
+            project_ids = [p.id for p in user_projects]
+            
+            if not project_ids:
+                return []
+                
+            # Base query filtering by the user's projects
+            query = db.query(EnergyGeneration).filter(EnergyGeneration.project_id.in_(project_ids))
+            
+            # Apply specific project_id filter if provided
+            if project_id:
+                if project_id not in project_ids:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Project not found or does not belong to the user",
+                    )
+                query = query.filter(EnergyGeneration.project_id == project_id)
+        else:
+            # For non-authenticated users, don't filter by project
+            query = db.query(EnergyGeneration)
+            
+            # But still apply specific project filter if provided
+            if project_id:
+                query = query.filter(EnergyGeneration.project_id == project_id)
+        
+        # Apply date filters
         if start_date:
             query = query.filter(EnergyGeneration.timestamp >= start_date)
         
         if end_date:
             query = query.filter(EnergyGeneration.timestamp <= end_date)
         
+        # Apply source type filter
         if source_type:
             query = query.filter(EnergyGeneration.source_type.in_(source_type))
         
@@ -82,6 +126,7 @@ def read_energy_generation_by_id(
     """
     Get a specific energy generation record by id
     """
+    # Get the generation record
     generation = db.query(EnergyGeneration).filter(
         EnergyGeneration.id == generation_id
     ).first()
@@ -90,6 +135,18 @@ def read_energy_generation_by_id(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Energy generation record not found",
+        )
+    
+    # Verify that the project belongs to the user
+    project = db.query(Project).filter(
+        Project.id == generation.project_id,
+        Project.user_id == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Energy generation record does not belong to the user",
         )
     
     return generation
@@ -105,6 +162,7 @@ def update_energy_generation(
     """
     Update an energy generation record
     """
+    # Get the generation record
     generation = db.query(EnergyGeneration).filter(
         EnergyGeneration.id == generation_id
     ).first()
@@ -114,6 +172,31 @@ def update_energy_generation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Energy generation record not found",
         )
+    
+    # Verify that the project belongs to the user
+    project = db.query(Project).filter(
+        Project.id == generation.project_id,
+        Project.user_id == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Energy generation record does not belong to the user",
+        )
+    
+    # If project_id is being updated, verify that the new project also belongs to the user
+    if data_in.project_id and data_in.project_id != generation.project_id:
+        new_project = db.query(Project).filter(
+            Project.id == data_in.project_id,
+            Project.user_id == current_user.id
+        ).first()
+        
+        if not new_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="New project not found or does not belong to the user",
+            )
     
     update_data = data_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -134,6 +217,7 @@ def delete_energy_generation(
     """
     Delete an energy generation record
     """
+    # Get the generation record
     generation = db.query(EnergyGeneration).filter(
         EnergyGeneration.id == generation_id
     ).first()
@@ -142,6 +226,18 @@ def delete_energy_generation(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Energy generation record not found",
+        )
+    
+    # Verify that the project belongs to the user
+    project = db.query(Project).filter(
+        Project.id == generation.project_id,
+        Project.user_id == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Energy generation record does not belong to the user",
         )
     
     db.delete(generation)
@@ -159,9 +255,25 @@ def batch_create_energy_generation(
     """
     Create multiple energy generation records
     """
+    # Get all the project IDs
+    project_ids = {item.project_id for item in data_in}
+    
+    # Verify that all projects belong to the user
+    user_projects = db.query(Project).filter(
+        Project.id.in_(project_ids),
+        Project.user_id == current_user.id
+    ).all()
+    
+    if len(user_projects) != len(project_ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="One or more projects not found or do not belong to the user",
+        )
+    
     data_objs = []
     for item in data_in:
         data = EnergyGeneration(
+            project_id=item.project_id,
             timestamp=item.timestamp,
             value_kwh=item.value_kwh,
             source_type=item.source_type,
@@ -182,25 +294,59 @@ def get_daily_generation(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     source_type: Optional[List[EnergySourceType]] = Query(None),
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    project_id: Optional[int] = None,
+    current_user:  User = Depends(get_current_active_user),
 ):
     """
     Get daily aggregated energy generation data
     """
     try:
+        # Get the user's projects if authenticated
+        user_id = current_user.id if current_user else None
+        
+        # Default date range
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=30)
-        
         if not end_date:
             end_date = datetime.utcnow()
-        
+            
         logger.info(f"Fetching daily generation data from {start_date} to {end_date}")
         
-        query = db.query(EnergyGeneration).filter(
-            EnergyGeneration.timestamp >= start_date,
-            EnergyGeneration.timestamp <= end_date
-        )
+        if user_id:
+            # Get projects for the authenticated user
+            user_projects = db.query(Project.id).filter(Project.user_id == user_id).all()
+            project_ids = [p.id for p in user_projects]
+            
+            if not project_ids:
+                return {"daily_generation": [], "total_kwh": 0, "by_source": {}, "avg_efficiency": 0, "by_project": {}}
+                
+            # Base query filtering by the user's projects
+            query = db.query(EnergyGeneration).filter(
+                EnergyGeneration.project_id.in_(project_ids),
+                EnergyGeneration.timestamp >= start_date,
+                EnergyGeneration.timestamp <= end_date
+            )
+            
+            # Apply specific project_id filter if provided
+            if project_id:
+                if project_id not in project_ids:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Project not found or does not belong to the user",
+                    )
+                query = query.filter(EnergyGeneration.project_id == project_id)
+        else:
+            # For non-authenticated users, don't filter by project
+            query = db.query(EnergyGeneration).filter(
+                EnergyGeneration.timestamp >= start_date,
+                EnergyGeneration.timestamp <= end_date
+            )
+            
+            # But still apply specific project filter if provided
+            if project_id:
+                query = query.filter(EnergyGeneration.project_id == project_id)
         
+        # Apply source type filter
         if source_type:
             query = query.filter(EnergyGeneration.source_type.in_(source_type))
         
@@ -212,14 +358,15 @@ def get_daily_generation(
                 "date": item.timestamp.date(),
                 "value_kwh": item.value_kwh,
                 "source_type": item.source_type.value,
-                "efficiency": item.efficiency or 0
+                "efficiency": item.efficiency or 0,
+                "project_id": item.project_id
             }
             for item in generation_data
         ])
         
         if df.empty:
             logger.warning("No generation data found")
-            return {"daily_generation": [], "total_kwh": 0, "by_source": {}, "avg_efficiency": 0}
+            return {"daily_generation": [], "total_kwh": 0, "by_source": {}, "avg_efficiency": 0, "by_project": {}}
         
         # Aggregate by date
         daily = df.groupby("date")["value_kwh"].sum().reset_index()
@@ -228,6 +375,10 @@ def get_daily_generation(
         # Aggregate by source type
         by_source = df.groupby("source_type")["value_kwh"].sum().to_dict()
         by_source = {k: float(v) for k, v in by_source.items()}
+        
+        # Aggregate by project
+        by_project = df.groupby("project_id")["value_kwh"].sum().to_dict()
+        by_project = {str(k): float(v) for k, v in by_project.items()}
         
         # Calculate average efficiency
         avg_efficiency = float(df["efficiency"].mean()) if "efficiency" in df.columns else 0
@@ -240,7 +391,8 @@ def get_daily_generation(
             "daily_generation": daily_data,
             "total_kwh": total_kwh,
             "by_source": by_source,
-            "avg_efficiency": avg_efficiency
+            "avg_efficiency": avg_efficiency,
+            "by_project": by_project
         }
     except Exception as e:
         logger.error(f"Error getting daily generation: {str(e)}")
@@ -255,26 +407,66 @@ def get_weekly_generation(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     source_type: Optional[List[EnergySourceType]] = Query(None),
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    project_id: Optional[int] = None,
+    current_user:  User = Depends(get_current_active_user),
 ):
     """
     Get weekly aggregated energy generation data.
     If start_date and end_date are not provided, defaults to the last 90 days.
     """
     try:
-        # Set default date range to last 90 days if not provided
+        # Get the user's projects if authenticated
+        user_id = current_user.id if current_user else None
+        
+        # Default date range
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=90)
         if not end_date:
             end_date = datetime.utcnow()
-        
+            
         logger.info(f"Fetching weekly generation data from {start_date} to {end_date}")
         
-        query = db.query(EnergyGeneration).filter(
-            EnergyGeneration.timestamp >= start_date,
-            EnergyGeneration.timestamp <= end_date
-        )
+        if user_id:
+            # Get projects for the authenticated user
+            user_projects = db.query(Project.id).filter(Project.user_id == user_id).all()
+            project_ids = [p.id for p in user_projects]
+            
+            if not project_ids:
+                return {
+                    "weekly_generation": [],
+                    "total_kwh": 0,
+                    "by_source": {},
+                    "avg_efficiency": 0,
+                    "by_project": {}
+                }
+                
+            # Base query filtering by the user's projects
+            query = db.query(EnergyGeneration).filter(
+                EnergyGeneration.project_id.in_(project_ids),
+                EnergyGeneration.timestamp >= start_date,
+                EnergyGeneration.timestamp <= end_date
+            )
+            
+            # Apply specific project_id filter if provided
+            if project_id:
+                if project_id not in project_ids:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Project not found or does not belong to the user",
+                    )
+                query = query.filter(EnergyGeneration.project_id == project_id)
+        else:
+            # For non-authenticated users, don't filter by project
+            query = db.query(EnergyGeneration).filter(
+                EnergyGeneration.timestamp >= start_date,
+                EnergyGeneration.timestamp <= end_date
+            )
+            
+            # But still apply specific project filter if provided
+            if project_id:
+                query = query.filter(EnergyGeneration.project_id == project_id)
         
+        # Apply source type filter
         if source_type:
             query = query.filter(EnergyGeneration.source_type.in_(source_type))
         
@@ -286,7 +478,8 @@ def get_weekly_generation(
                 "date": item.timestamp.date(),
                 "value_kwh": item.value_kwh,
                 "source_type": item.source_type.value,
-                "efficiency": item.efficiency or 0
+                "efficiency": item.efficiency or 0,
+                "project_id": item.project_id
             }
             for item in generation_data
         ])
@@ -297,7 +490,8 @@ def get_weekly_generation(
                 "weekly_generation": [],
                 "total_kwh": 0,
                 "by_source": {},
-                "avg_efficiency": 0
+                "avg_efficiency": 0,
+                "by_project": {}
             }
         
         # Compute the start of the week (Monday) for each date
@@ -314,6 +508,10 @@ def get_weekly_generation(
         by_source = df.groupby("source_type")["value_kwh"].sum().to_dict()
         by_source = {k: float(v) for k, v in by_source.items()}
         
+        # Aggregate by project
+        by_project = df.groupby("project_id")["value_kwh"].sum().to_dict()
+        by_project = {str(k): float(v) for k, v in by_project.items()}
+        
         # Total kWh and average efficiency for the period
         total_kwh = float(df["value_kwh"].sum())
         avg_efficiency = float(df["efficiency"].mean()) if "efficiency" in df.columns else 0
@@ -324,7 +522,8 @@ def get_weekly_generation(
             "weekly_generation": weekly_data,
             "total_kwh": total_kwh,
             "by_source": by_source,
-            "avg_efficiency": avg_efficiency
+            "avg_efficiency": avg_efficiency,
+            "by_project": by_project
         }
     except Exception as e:
         logger.error(f"Error getting weekly generation: {str(e)}", exc_info=True)

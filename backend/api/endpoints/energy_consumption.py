@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 import pandas as pd
 import logging
 
-from api.deps import get_db, get_current_active_user, get_optional_current_user, get_demo_user
+from api.deps import get_db, get_current_active_user
 from models.user import User
-from models.energy_data import EnergyConsumption, EnergySourceType
+from models.energy_data import EnergyConsumption, EnergySourceType, Project
 from schemas.energy import (
     EnergyConsumption as EnergyConsumptionSchema,
     EnergyConsumptionCreate,
@@ -29,8 +29,20 @@ def create_energy_consumption(
     """
     Create new energy consumption record
     """
+    # Verify that the project belongs to the current user
+    project = db.query(Project).filter(
+        Project.id == data_in.project_id,
+        Project.user_id == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or does not belong to the user",
+        )
+    
     data = EnergyConsumption(
-        user_id=current_user.id,
+        project_id=data_in.project_id,
         timestamp=data_in.timestamp,
         value_kwh=data_in.value_kwh,
         source_type=data_in.source_type,
@@ -48,17 +60,31 @@ def read_energy_consumption(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     source_type: Optional[List[EnergySourceType]] = Query(None),
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    project_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
 ):
     """
-    Retrieve energy consumption records with optional authentication
-    If user is not authenticated, returns demo data
+    Retrieve energy consumption records for authenticated user
     """
     try:
-        # If no authenticated user, use demo user
-        user_id = current_user.id if current_user else get_demo_user(db).id
+        # Get user's projects
+        user_projects = db.query(Project.id).filter(Project.user_id == current_user.id).all()
+        project_ids = [p.id for p in user_projects]
         
-        query = db.query(EnergyConsumption).filter(EnergyConsumption.user_id == user_id)
+        if not project_ids:
+            return []
+        
+        # Base query filtering by the user's projects
+        query = db.query(EnergyConsumption).filter(EnergyConsumption.project_id.in_(project_ids))
+        
+        # Apply specific project_id filter if provided
+        if project_id:
+            if project_id not in project_ids:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Project not found or does not belong to the user",
+                )
+            query = query.filter(EnergyConsumption.project_id == project_id)
         
         if start_date:
             query = query.filter(EnergyConsumption.timestamp >= start_date)
@@ -86,15 +112,27 @@ def read_energy_consumption_by_id(
     """
     Get a specific energy consumption record by id
     """
+    # Get the consumption record
     consumption = db.query(EnergyConsumption).filter(
-        EnergyConsumption.id == consumption_id,
-        EnergyConsumption.user_id == current_user.id
+        EnergyConsumption.id == consumption_id
     ).first()
     
     if not consumption:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Energy consumption record not found",
+        )
+    
+    # Verify that the project belongs to the user
+    project = db.query(Project).filter(
+        Project.id == consumption.project_id,
+        Project.user_id == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Energy consumption record does not belong to the user",
         )
     
     return consumption
@@ -110,9 +148,9 @@ def update_energy_consumption(
     """
     Update a energy consumption record
     """
+    # Get the consumption record
     consumption = db.query(EnergyConsumption).filter(
-        EnergyConsumption.id == consumption_id,
-        EnergyConsumption.user_id == current_user.id
+        EnergyConsumption.id == consumption_id
     ).first()
     
     if not consumption:
@@ -120,6 +158,31 @@ def update_energy_consumption(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Energy consumption record not found",
         )
+    
+    # Verify that the project belongs to the user
+    project = db.query(Project).filter(
+        Project.id == consumption.project_id,
+        Project.user_id == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Energy consumption record does not belong to the user",
+        )
+    
+    # If project_id is being updated, verify that the new project also belongs to the user
+    if data_in.project_id and data_in.project_id != consumption.project_id:
+        new_project = db.query(Project).filter(
+            Project.id == data_in.project_id,
+            Project.user_id == current_user.id
+        ).first()
+        
+        if not new_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="New project not found or does not belong to the user",
+            )
     
     update_data = data_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -140,15 +203,27 @@ def delete_energy_consumption(
     """
     Delete a energy consumption record
     """
+    # Get the consumption record
     consumption = db.query(EnergyConsumption).filter(
-        EnergyConsumption.id == consumption_id,
-        EnergyConsumption.user_id == current_user.id
+        EnergyConsumption.id == consumption_id
     ).first()
     
     if not consumption:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Energy consumption record not found",
+        )
+    
+    # Verify that the project belongs to the user
+    project = db.query(Project).filter(
+        Project.id == consumption.project_id,
+        Project.user_id == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Energy consumption record does not belong to the user",
         )
     
     db.delete(consumption)
@@ -166,10 +241,25 @@ def batch_create_energy_consumption(
     """
     Create multiple energy consumption records
     """
+    # Get all the project IDs
+    project_ids = {item.project_id for item in data_in}
+    
+    # Verify that all projects belong to the user
+    user_projects = db.query(Project).filter(
+        Project.id.in_(project_ids),
+        Project.user_id == current_user.id
+    ).all()
+    
+    if len(user_projects) != len(project_ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="One or more projects not found or do not belong to the user",
+        )
+    
     data_objs = []
     for item in data_in:
         data = EnergyConsumption(
-            user_id=current_user.id,
+            project_id=item.project_id,
             timestamp=item.timestamp,
             value_kwh=item.value_kwh,
             source_type=item.source_type,
@@ -189,15 +279,19 @@ def get_daily_consumption(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     source_type: Optional[List[EnergySourceType]] = Query(None),
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    project_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
 ):
     """
-    Get daily aggregated energy consumption with optional authentication
-    If user is not authenticated, returns demo data
+    Get daily aggregated energy consumption for authenticated user
     """
     try:
-        # If no authenticated user, use demo user
-        user_id = current_user.id if current_user else get_demo_user(db).id
+        # Get user's projects
+        user_projects = db.query(Project.id).filter(Project.user_id == current_user.id).all()
+        project_ids = [p.id for p in user_projects]
+        
+        if not project_ids:
+            return {"daily_consumption": [], "total_kwh": 0, "by_source": {}}
         
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=30)
@@ -205,13 +299,23 @@ def get_daily_consumption(
         if not end_date:
             end_date = datetime.utcnow()
         
-        logger.info(f"Fetching daily consumption data for user {user_id} from {start_date} to {end_date}")
+        logger.info(f"Fetching daily consumption data for user {current_user.id} from {start_date} to {end_date}")
         
+        # Base query filtering by the user's projects
         query = db.query(EnergyConsumption).filter(
-            EnergyConsumption.user_id == user_id,
+            EnergyConsumption.project_id.in_(project_ids),
             EnergyConsumption.timestamp >= start_date,
             EnergyConsumption.timestamp <= end_date
         )
+        
+        # Apply specific project_id filter if provided
+        if project_id:
+            if project_id not in project_ids:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Project not found or does not belong to the user",
+                )
+            query = query.filter(EnergyConsumption.project_id == project_id)
         
         if source_type:
             query = query.filter(EnergyConsumption.source_type.in_(source_type))
@@ -223,14 +327,15 @@ def get_daily_consumption(
             {
                 "date": item.timestamp.date(),
                 "value_kwh": item.value_kwh,
-                "source_type": item.source_type.value
+                "source_type": item.source_type.value,
+                "project_id": item.project_id
             }
             for item in consumption_data
         ])
         
         if df.empty:
-            logger.warning(f"No consumption data found for user {user_id}")
-            return {"daily_consumption": [], "total_kwh": 0, "by_source": {}}
+            logger.warning(f"No consumption data found for user {current_user.id}")
+            return {"daily_consumption": [], "total_kwh": 0, "by_source": {}, "by_project": {}}
         
         # Aggregate by date
         daily = df.groupby("date")["value_kwh"].sum().reset_index()
@@ -240,6 +345,10 @@ def get_daily_consumption(
         by_source = df.groupby("source_type")["value_kwh"].sum().to_dict()
         by_source = {k: float(v) for k, v in by_source.items()}
         
+        # Aggregate by project
+        by_project = df.groupby("project_id")["value_kwh"].sum().to_dict()
+        by_project = {str(k): float(v) for k, v in by_project.items()}
+        
         total_kwh = float(df["value_kwh"].sum())
         
         logger.info(f"Retrieved {len(daily_data)} days of data, total {total_kwh} kWh")
@@ -247,7 +356,8 @@ def get_daily_consumption(
         return {
             "daily_consumption": daily_data,
             "total_kwh": total_kwh,
-            "by_source": by_source
+            "by_source": by_source,
+            "by_project": by_project
         }
     except Exception as e:
         logger.error(f"Error getting daily consumption: {str(e)}")
@@ -262,29 +372,44 @@ def get_weekly_consumption(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     source_type: Optional[List[EnergySourceType]] = Query(None),
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    project_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
 ):
     """
-    Get weekly aggregated energy consumption data.
+    Get weekly aggregated energy consumption data for authenticated user.
     If start_date and end_date are not provided, defaults to the last 90 days.
     """
     try:
-        # Use demo user if no authenticated user is available
-        user_id = current_user.id if current_user else get_demo_user(db).id
-
+        # Get user's projects
+        user_projects = db.query(Project.id).filter(Project.user_id == current_user.id).all()
+        project_ids = [p.id for p in user_projects]
+        
+        if not project_ids:
+            return {"weekly_consumption": [], "total_kwh": 0, "by_source": {}}
+        
         # Default to last 90 days if not provided
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=90)
         if not end_date:
             end_date = datetime.utcnow()
         
-        logger.info(f"Fetching weekly consumption data for user {user_id} from {start_date} to {end_date}")
+        logger.info(f"Fetching weekly consumption data for user {current_user.id} from {start_date} to {end_date}")
         
+        # Base query filtering by the user's projects
         query = db.query(EnergyConsumption).filter(
-            EnergyConsumption.user_id == user_id,
+            EnergyConsumption.project_id.in_(project_ids),
             EnergyConsumption.timestamp >= start_date,
             EnergyConsumption.timestamp <= end_date
         )
+        
+        # Apply specific project_id filter if provided
+        if project_id:
+            if project_id not in project_ids:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Project not found or does not belong to the user",
+                )
+            query = query.filter(EnergyConsumption.project_id == project_id)
         
         if source_type:
             query = query.filter(EnergyConsumption.source_type.in_(source_type))
@@ -296,14 +421,15 @@ def get_weekly_consumption(
             {
                 "date": item.timestamp.date(),
                 "value_kwh": item.value_kwh,
-                "source_type": item.source_type.value
+                "source_type": item.source_type.value,
+                "project_id": item.project_id
             }
             for item in consumption_data
         ])
         
         if df.empty:
-            logger.warning(f"No consumption data found for user {user_id}")
-            return {"weekly_consumption": [], "total_kwh": 0, "by_source": {}}
+            logger.warning(f"No consumption data found for user {current_user.id}")
+            return {"weekly_consumption": [], "total_kwh": 0, "by_source": {}, "by_project": {}}
         
         # Compute the start of the week (Monday) for each record
         df["week_start"] = df["date"].apply(lambda d: d - timedelta(days=d.weekday()))
@@ -319,6 +445,10 @@ def get_weekly_consumption(
         by_source = df.groupby("source_type")["value_kwh"].sum().to_dict()
         by_source = {k: float(v) for k, v in by_source.items()}
         
+        # Aggregate by project
+        by_project = df.groupby("project_id")["value_kwh"].sum().to_dict()
+        by_project = {str(k): float(v) for k, v in by_project.items()}
+        
         total_kwh = float(df["value_kwh"].sum())
         
         logger.info(f"Retrieved {len(weekly_data)} weeks of data, total {total_kwh} kWh")
@@ -326,7 +456,8 @@ def get_weekly_consumption(
         return {
             "weekly_consumption": weekly_data,
             "total_kwh": total_kwh,
-            "by_source": by_source
+            "by_source": by_source,
+            "by_project": by_project
         }
     except Exception as e:
         logger.error(f"Error getting weekly consumption: {str(e)}", exc_info=True)

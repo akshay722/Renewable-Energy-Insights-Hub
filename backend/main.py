@@ -1,11 +1,22 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
+import logging
 from config import settings
 from database import engine, Base
 from api.api import api_router
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Create database tables if they don't exist
+try:
+    logger.info("Creating database tables if they don't exist...")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables created or already exist")
+except SQLAlchemyError as e:
+    logger.error(f"Error creating database tables: {e}")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

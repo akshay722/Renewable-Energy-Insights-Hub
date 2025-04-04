@@ -3,29 +3,39 @@ from typing import Optional, List
 from datetime import datetime
 from models.energy_data import EnergySourceType
 
-class EnergyDataBase(BaseModel):
+# Base classes
+class EnergyConsumptionBase(BaseModel):
     timestamp: datetime
-    value_kwh: float = Field(..., gt=0)
+    value_kwh: float
     source_type: EnergySourceType
-    location: Optional[str] = None
 
-class EnergyConsumptionCreate(EnergyDataBase):
+class EnergyGenerationBase(BaseModel):
+    timestamp: datetime
+    value_kwh: float
+    source_type: EnergySourceType
+    efficiency: Optional[float] = Field(None, ge=0, le=100)
+
+# Create schemas
+class EnergyConsumptionCreate(EnergyConsumptionBase):
     user_id: Optional[int] = None
 
+class EnergyGenerationCreate(EnergyGenerationBase):
+    pass
+
+# Update schemas
 class EnergyConsumptionUpdate(BaseModel):
     timestamp: Optional[datetime] = None
-    value_kwh: Optional[float] = Field(None, gt=0)
+    value_kwh: Optional[float] = None
     source_type: Optional[EnergySourceType] = None
-    location: Optional[str] = None
 
-class EnergyGenerationCreate(EnergyDataBase):
-    user_id: Optional[int] = None
+class EnergyGenerationUpdate(BaseModel):
+    timestamp: Optional[datetime] = None
+    value_kwh: Optional[float] = None
+    source_type: Optional[EnergySourceType] = None
     efficiency: Optional[float] = Field(None, ge=0, le=100)
 
-class EnergyGenerationUpdate(EnergyConsumptionUpdate):
-    efficiency: Optional[float] = Field(None, ge=0, le=100)
-
-class EnergyDataInDBBase(EnergyDataBase):
+# DB schemas
+class EnergyConsumptionInDB(EnergyConsumptionBase):
     id: int
     user_id: int
     created_at: datetime
@@ -33,12 +43,21 @@ class EnergyDataInDBBase(EnergyDataBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-class EnergyConsumption(EnergyDataInDBBase):
+class EnergyGenerationInDB(EnergyGenerationBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+# Response schemas
+class EnergyConsumption(EnergyConsumptionInDB):
     pass
 
-class EnergyGeneration(EnergyDataInDBBase):
-    efficiency: Optional[float] = None
+class EnergyGeneration(EnergyGenerationInDB):
+    pass
 
+# Filter schemas
 class EnergyConsumptionFilter(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
@@ -47,6 +66,7 @@ class EnergyConsumptionFilter(BaseModel):
 class EnergyGenerationFilter(EnergyConsumptionFilter):
     pass
 
+# Summary schemas
 class EnergySummary(BaseModel):
     total_consumption: float
     total_generation: float

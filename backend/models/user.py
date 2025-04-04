@@ -13,4 +13,3 @@ class User(BaseModel):
     
     # Relationships
     energy_data = relationship("EnergyConsumption", back_populates="user")
-    generation_data = relationship("EnergyGeneration", back_populates="user")

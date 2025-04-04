@@ -3,6 +3,10 @@ import { useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import EnergyTrackingPage from "./pages/EnergyTrackingPage";
+import InsightsPage from "./pages/InsightsPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -28,7 +32,13 @@ function App() {
             <Layout />
           </ProtectedRoute>
         }
-      ></Route>
+      >
+        <Route index element={<Dashboard />} />
+        <Route path="energy-tracking" element={<EnergyTrackingPage />} />
+        <Route path="insights" element={<InsightsPage />} />
+      </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

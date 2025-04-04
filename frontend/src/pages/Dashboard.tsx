@@ -1,27 +1,24 @@
 import { useState, useEffect } from "react";
-import { format, subDays, parseISO } from "date-fns";
-import { insightsApi, consumptionApi, generationApi } from "../services/api";
+import { parseISO, format, subDays } from "date-fns";
+import { Link } from "react-router-dom";
+import { insightsApi, consumptionApi, projectsApi } from "../services/api";
 import {
   EnergySummary,
   InsightRecommendation,
   EnergySourceType,
-  isRenewableSource,
+  Project,
 } from "../types";
-
-import DateRangePicker from "../components/DateRangePicker";
+import { useDateRange } from "../context/DateRangeContext";
+import { useAuth } from "../context/AuthContext"; // Import auth context
 import EnergySummaryCard from "../components/EnergySummaryCard";
-import RecommendationCard from "../components/RecommendationCard";
 import SourceDistributionChart from "../components/charts/SourceDistributionChart";
 import GreenPowerHeatmap from "../components/charts/GreenPowerHeatmap";
 
 const Dashboard = () => {
-  // Set default date range to last 7 days
-  const today = new Date();
-  const sevenDaysAgo = subDays(today, 7);
-  const [startDate, setStartDate] = useState(
-    format(sevenDaysAgo, "yyyy-MM-dd")
-  );
-  const [endDate, setEndDate] = useState(format(today, "yyyy-MM-dd"));
+  // Use global date range from context
+  const { startDate, endDate } = useDateRange();
+  // Get token (or isAuthenticated) from auth context
+  const { token, isAuthenticated } = useAuth();
 
   // State for API data
   const [isLoading, setIsLoading] = useState(true);
@@ -30,7 +27,7 @@ const Dashboard = () => {
   const [recommendations, setRecommendations] = useState<
     InsightRecommendation[]
   >([]);
-  const [hourlyConsumptionData, setHourlyConsumptionData] = useState([]);
+  const [hourlyConsumptionData, setHourlyConsumptionData] = useState<any[]>([]);
   const [consumptionBySource, setConsumptionBySource] = useState<
     Record<string, number>
   >({});
@@ -47,11 +44,29 @@ const Dashboard = () => {
     EnergySourceType.SOLAR,
   ]);
 
-  // Handle date range changes
-  const handleDateChange = (newStartDate: string, newEndDate: string) => {
-    setStartDate(newStartDate);
-    setEndDate(newEndDate);
-  };
+  // Project selection state
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+    null
+  );
+  const [loadingProjects, setLoadingProjects] = useState(false);
+
+  // Load user's projects
+  useEffect(() => {
+    const loadProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        const data = await projectsApi.getAll();
+        setProjects(data);
+      } catch (error) {
+        console.error("Error loading projects:", error);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    loadProjects();
+  }, []);
 
   // Load dashboard data from APIs
   const loadDashboardData = async () => {
@@ -61,6 +76,16 @@ const Dashboard = () => {
       const thirtyDaysAgo = format(subDays(new Date(), 30), "yyyy-MM-dd");
 
       console.log("Loading data for date range:", startDate, endDate);
+      console.log("Selected project:", selectedProjectId);
+
+      // Prepare filter params
+      const filters = {
+        start_date: startDate,
+        end_date: endDate,
+        source_type:
+          activeSourceTypes.length > 0 ? activeSourceTypes : undefined,
+        project_id: selectedProjectId || undefined,
+      };
 
       // Fetch all data in parallel.
       const [
@@ -69,18 +94,14 @@ const Dashboard = () => {
         dailyConsumptionResponse,
         hourlyConsumptionResponse,
       ] = await Promise.all([
-        insightsApi.getSummary(startDate, endDate),
-        insightsApi.getRecommendations(),
-        consumptionApi.getDailyAggregate({
-          start_date: startDate,
-          end_date: endDate,
-          source_type: activeSourceTypes,
-        }),
-        consumptionApi.getAll({
-          start_date: thirtyDaysAgo,
-          end_date: endDate,
-          source_type: activeSourceTypes,
-        }),
+        insightsApi.getSummary(
+          startDate,
+          endDate,
+          selectedProjectId || undefined
+        ),
+        insightsApi.getRecommendations(selectedProjectId || undefined),
+        consumptionApi.getDailyAggregate(filters),
+        consumptionApi.getAll({ ...filters, start_date: thirtyDaysAgo }),
       ]);
 
       setSummary(summaryData);
@@ -89,7 +110,7 @@ const Dashboard = () => {
       if (dailyConsumptionResponse) {
         setConsumptionBySource(dailyConsumptionResponse.by_source || {});
       }
-      
+
       if (hourlyConsumptionResponse) {
         setHourlyConsumptionData(hourlyConsumptionResponse);
       }
@@ -107,10 +128,13 @@ const Dashboard = () => {
     }
   };
 
-  // Reload data when the date range changes.
+  // Reload data when the date range, selected project, or auth token changes
   useEffect(() => {
-    loadDashboardData();
-  }, [startDate, endDate]);
+    // Only load dashboard data if the user is authenticated
+    if (isAuthenticated && token) {
+      loadDashboardData();
+    }
+  }, [startDate, endDate, selectedProjectId, token, isAuthenticated]);
 
   // Calculate green vs non-green energy consumption.
   const getGreenVsNonGreenData = (): Record<string, number> => {
@@ -132,6 +156,12 @@ const Dashboard = () => {
     };
   };
 
+  // Handle project change
+  const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSelectedProjectId(value ? Number(value) : null);
+  };
+
   // Prepare data for charts.
   const greenVsNonGreenData = getGreenVsNonGreenData();
 
@@ -141,11 +171,25 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">
           Dashboard
         </h1>
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onDateChange={handleDateChange}
-        />
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+          {/* Project selector */}
+          {!loadingProjects && projects.length > 0 && (
+            <div className="relative">
+              <select
+                value={selectedProjectId || ""}
+                onChange={handleProjectChange}
+                className="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
+              >
+                <option value="">All Projects</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </div>
 
       {!hasData && !isLoading && (
@@ -169,6 +213,36 @@ const Dashboard = () => {
               <p className="text-sm text-blue-700">
                 No energy data found. Please check if data has been loaded to
                 the database.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {projects.length === 0 && !loadingProjects && !isLoading && (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+          <div className="flex">
+            <div className="flex-shrink-0 text-blue-500">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-700">
+                No projects found.{" "}
+                <Link to="/projects" className="underline font-medium">
+                  Create a new project
+                </Link>{" "}
+                to start tracking energy data.
               </p>
             </div>
           </div>
@@ -245,26 +319,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Recommendations section */}
-      <div className="card">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Recommendations
-        </h2>
-        {isLoading ? (
-          <div className="space-y-4">
-            <div className="animate-pulse h-20 bg-gray-200 rounded"></div>
-            <div className="animate-pulse h-20 bg-gray-200 rounded"></div>
-          </div>
-        ) : recommendations.length > 0 ? (
-          <div className="space-y-4">
-            {recommendations.map((recommendation, index) => (
-              <RecommendationCard key={index} recommendation={recommendation} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">No recommendations available.</p>
-        )}
-      </div>
+      {/* Recommendations section can be uncommented if needed */}
     </div>
   );
 };

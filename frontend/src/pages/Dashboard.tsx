@@ -75,10 +75,6 @@ const Dashboard = () => {
     try {
       // Fetch a larger range for hourly data.
       const thirtyDaysAgo = format(subDays(new Date(), 30), "yyyy-MM-dd");
-
-      console.log("Loading data for date range:", startDate, endDate);
-      console.log("Selected project:", selectedProjectId);
-
       // Prepare filter params
       const filters = {
         start_date: startDate,

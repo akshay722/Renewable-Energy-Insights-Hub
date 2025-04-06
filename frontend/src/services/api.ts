@@ -4,9 +4,6 @@ import {
   EnergyConsumption,
   EnergyGeneration,
   EnergySummary,
-  InsightRecommendation,
-  EnergyTrends,
-  Project,
 } from "../types";
 
 // Create axios instance with base URL and default headers

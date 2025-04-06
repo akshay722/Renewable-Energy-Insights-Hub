@@ -10,10 +10,6 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({
   project,
   isLoading,
 }) => {
-  {
-    console.log(project);
-  }
-
   if (isLoading) {
     return (
       <div className="animate-pulse">

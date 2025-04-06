@@ -237,28 +237,6 @@ export const insightsApi = {
     });
     return response.data;
   },
-
-  getRecommendations: async (projectId?: number) => {
-    const response = await api.get<InsightRecommendation[]>(
-      "/insights/recommendations",
-      {
-        params: { project_id: projectId },
-      }
-    );
-    return response.data;
-  },
-
-  getTrends: async (months: number = 3, projectId?: number) => {
-    const response = await api.get<EnergyTrends>("/insights/trends", {
-      params: {
-        months,
-        project_id: projectId,
-      },
-    });
-    return response.data;
-  },
 };
-
-// No mock data API - data is handled externally
 
 export default api;

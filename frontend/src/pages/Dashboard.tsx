@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
-import { parseISO, format, subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import { Link } from "react-router-dom";
-import { insightsApi, consumptionApi, projectsApi } from "../services/api";
 import {
-  EnergySummary,
-  InsightRecommendation,
-  EnergySourceType,
-  Project,
-} from "../types";
+  insightsApi,
+  consumptionApi,
+  generationApi,
+  projectsApi,
+} from "../services/api";
+import { EnergySummary, EnergySourceType, Project } from "../types";
 import { useDateRange } from "../context/DateRangeContext";
 import { useAuth } from "../context/AuthContext"; // Import auth context
 import EnergySummaryCard from "../components/EnergySummaryCard";
 import SourceDistributionChart from "../components/charts/SourceDistributionChart";
-import GreenPowerHeatmap from "../components/charts/GreenPowerHeatmap";
+import ConsumptionGenerationBarChart from "../components/charts/ConsumptionGenerationBarChart";
+import Icon from "../components/icons/Icon";
 
 const Dashboard = () => {
   // Use global date range from context
@@ -24,11 +25,11 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
   const [summary, setSummary] = useState<EnergySummary | null>(null);
-  const [recommendations, setRecommendations] = useState<
-    InsightRecommendation[]
-  >([]);
   const [hourlyConsumptionData, setHourlyConsumptionData] = useState<any[]>([]);
   const [consumptionBySource, setConsumptionBySource] = useState<
+    Record<string, number>
+  >({});
+  const [generationBySource, setGenerationBySource] = useState<
     Record<string, number>
   >({});
 
@@ -90,8 +91,8 @@ const Dashboard = () => {
       // Fetch all data in parallel.
       const [
         summaryData,
-        recommendationsData,
         dailyConsumptionResponse,
+        dailyGenerationResponse,
         hourlyConsumptionResponse,
       ] = await Promise.all([
         insightsApi.getSummary(
@@ -99,16 +100,19 @@ const Dashboard = () => {
           endDate,
           selectedProjectId || undefined
         ),
-        insightsApi.getRecommendations(selectedProjectId || undefined),
         consumptionApi.getDailyAggregate(filters),
+        generationApi.getDailyAggregate(filters),
         consumptionApi.getAll({ ...filters, start_date: thirtyDaysAgo }),
       ]);
 
       setSummary(summaryData);
-      setRecommendations(recommendationsData);
 
       if (dailyConsumptionResponse) {
         setConsumptionBySource(dailyConsumptionResponse.by_source || {});
+      }
+
+      if (dailyGenerationResponse) {
+        setGenerationBySource(dailyGenerationResponse.by_source || {});
       }
 
       if (hourlyConsumptionResponse) {
@@ -196,18 +200,7 @@ const Dashboard = () => {
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
           <div className="flex">
             <div className="flex-shrink-0 text-blue-500">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <Icon name="info" className="h-5 w-5" />
             </div>
             <div className="ml-3">
               <p className="text-sm text-blue-700">
@@ -223,18 +216,7 @@ const Dashboard = () => {
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
           <div className="flex">
             <div className="flex-shrink-0 text-blue-500">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <Icon name="info" className="h-5 w-5" />
             </div>
             <div className="ml-3">
               <p className="text-sm text-blue-700">
@@ -251,75 +233,49 @@ const Dashboard = () => {
 
       {summary && <EnergySummaryCard summary={summary} isLoading={isLoading} />}
 
-      {/* Energy Source Distribution and Green Power Coverage */}
+      {/* Energy Source Distribution and Consumption vs Generation Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <div className="card">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Energy Source Breakdown
-            </h2>
-            {isLoading ? (
-              <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
-            ) : Object.keys(consumptionBySource).length > 0 ? (
-              <SourceDistributionChart
-                data={consumptionBySource}
-                chartType="doughnut"
-                height={260}
-                title="Source Distribution"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-64 text-gray-400">
-                No consumption data available
-              </div>
-            )}
-          </div>
-          <div className="card">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Renewable vs Non-Renewable Energy
-            </h2>
-            {isLoading ? (
-              <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
-            ) : Object.keys(greenVsNonGreenData).length > 0 ? (
-              <SourceDistributionChart
-                data={greenVsNonGreenData}
-                chartType="pie"
-                height={260}
-                title="Green Energy Percentage"
-                showGreenVsNonGreen={true}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-64 text-gray-400">
-                No consumption data available
-              </div>
-            )}
-          </div>
+        <div className="card">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Energy Source Breakdown
+          </h2>
+          {isLoading ? (
+            <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
+          ) : Object.keys(consumptionBySource).length > 0 ? (
+            <SourceDistributionChart
+              data={consumptionBySource}
+              chartType="doughnut"
+              height={260}
+              title="Source Distribution"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-64 text-gray-400">
+              No consumption data available
+            </div>
+          )}
         </div>
         <div className="card">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            24/7 Green Power Coverage
+            Consumption & Generation
           </h2>
           {isLoading ? (
-            <div className="animate-pulse h-80 bg-gray-200 rounded"></div>
-          ) : hourlyConsumptionData.length > 0 ? (
-            <GreenPowerHeatmap
-              consumptionData={hourlyConsumptionData.filter((item) => {
-                const date = parseISO(item.timestamp);
-                const startDt = new Date(startDate);
-                const endDt = new Date(endDate);
-                return date >= startDt && date <= endDt;
-              })}
-              viewMode="day"
-              title=""
+            <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
+          ) : summary &&
+            (summary.total_consumption > 0 || summary.total_generation > 0) ? (
+            <ConsumptionGenerationBarChart
+              summary={summary}
+              consumptionBySource={consumptionBySource}
+              generationBySource={generationBySource}
+              height={260}
+              title="Energy Overview"
             />
           ) : (
-            <div className="flex items-center justify-center h-80 text-gray-400">
-              No hourly data available
+            <div className="flex items-center justify-center h-64 text-gray-400">
+              No energy data available
             </div>
           )}
         </div>
       </div>
-
-      {/* Recommendations section can be uncommented if needed */}
     </div>
   );
 };

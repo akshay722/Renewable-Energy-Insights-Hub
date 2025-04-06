@@ -5,7 +5,6 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import InsightsPage from "./pages/InsightsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailsPage from "./pages/ProjectDetailsPage";
@@ -39,8 +38,6 @@ function App() {
           <Route path="" element={<Dashboard />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="projects/:projectId" element={<ProjectDetailsPage />} />
-          <Route path="insights" element={<InsightsPage />} />
-          <Route path="insights/:projectId" element={<InsightsPage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
 

@@ -1,6 +1,105 @@
 # Renewable Energy Insights Hub
 
-A dashboard application for tracking business energy consumption and generation from renewable and non-renewable sources.
+A comprehensive platform for monitoring and analyzing renewable energy consumption and generation.
+
+## Easy Setup with Docker
+
+This application is fully dockerized, including the database with mock data, making it extremely easy to get started.
+
+### Prerequisites
+
+- Docker and Docker Compose
+- Git
+
+### One-Command Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/RenewableEnergyInsightsHub.git
+cd RenewableEnergyInsightsHub
+
+# Start all services (database, backend, frontend)
+docker compose up
+```
+
+That's it! The application will:
+
+1. Create a MySQL database with mock data
+2. Start the backend API server
+3. Start the frontend development server
+
+### Accessing the Application
+
+Once all containers are running, access:
+
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+
+### Demo Accounts
+
+The following accounts are pre-created with the mock data:
+
+- Regular user: demo/password
+- Test user: test/password123
+- Admin user: admin/admin123
+
+## Features
+
+- Real-time energy consumption and generation monitoring
+- Historical data visualization with charts and graphs
+- Source filtering (solar, wind, grid)
+- User authentication and profile management
+- Project management
+- Modern, responsive UI built with React and Tailwind CSS
+
+## Development
+
+If you prefer to run the application without Docker for development:
+
+### Backend Setup
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Configure database
+echo "DB_USER=root
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=renewable_energy_db" > .env
+
+# Run the server
+python -m uvicorn main:app --reload
+```
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Data Persistence
+
+The Docker setup includes a volume for the database, so your data will persist between container restarts. If you need to reset to the initial data, remove the volume:
+
+```bash
+docker compose down -v
+docker compose up
+```
+
+## Deployment
+
+For deploying to AWS, see [DEPLOYMENT.md](DEPLOYMENT.md) which includes detailed instructions for:
+
+- Setting up AWS Free Tier resources
+- Deploying the application to Elastic Beanstalk
+- Setting up a CI/CD pipeline
 
 ## Overview
 

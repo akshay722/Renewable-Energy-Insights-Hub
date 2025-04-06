@@ -57,6 +57,7 @@ interface EnergyChartProps {
   timeFrame?: "hourly" | "daily" | "weekly" | "monthly";
   startDate?: Date;
   endDate?: Date;
+  resolutionControls?: React.ReactNode;
 }
 
 const EnergyChart = ({
@@ -68,6 +69,7 @@ const EnergyChart = ({
   timeFrame = "hourly",
   startDate,
   endDate,
+  resolutionControls,
 }: EnergyChartProps) => {
   // Format dates based on timeframe
   const formatDate = (dateString: string) => {
@@ -123,7 +125,6 @@ const EnergyChart = ({
   // Prepare chart data
   const chartData = useMemo(() => {
     // Get all unique dates from both datasets\
-    console.log("consumptionData:", consumptionData);
     const allDates = new Set<string>(
       [
         ...consumptionData.map((item) => getDateField(item)),
@@ -217,10 +218,14 @@ const EnergyChart = ({
             (date) => consumptionMap.get(date) || 0
           ),
           borderColor: "rgb(239, 68, 68)", // Red
-          backgroundColor: "rgba(239, 68, 68, 0.5)",
+          backgroundColor: "rgba(239, 68, 68, 0.2)",
           borderWidth: 2,
-          tension: 0.3,
+          tension: 0.4,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          fill: chartType === "line" ? false : undefined,
           type: chartType === "mixed" ? "bar" : undefined,
+          borderDash: chartType === "line" ? [] : undefined,
         });
       }
 
@@ -240,7 +245,10 @@ const EnergyChart = ({
           borderColor: "rgb(34, 197, 94)", // Green
           backgroundColor: "rgba(34, 197, 94, 0.2)",
           borderWidth: 2,
-          tension: 0.3,
+          tension: 0.4,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          fill: chartType === "line" ? false : undefined,
           type: chartType === "mixed" ? "line" : undefined,
         });
       }
@@ -334,65 +342,56 @@ const EnergyChart = ({
     },
   };
 
-  // Special chart for consumption-generation chart
-  if (chartType === "consumption-generation") {
-    // Use a bar chart as the base but with mixed series types
-    return (
-      <div style={{ height }}>
-        <Bar
-          data={chartData as any}
+  // Default chart rendering based on chart type
+  return (
+    <div style={{ height }}>
+      <div className="mb-2 flex justify-between items-center text-gray-700">
+        {title && <h3 className="text-lg font-semibold">{title}</h3>}
+        {resolutionControls}
+      </div>
+      {chartType === "line" ? (
+        <Line
+          data={chartData as ChartData<"line">}
           options={{
             ...options,
             plugins: {
               ...options.plugins,
-              tooltip: {
-                ...options.plugins?.tooltip,
-                callbacks: {
-                  ...options.plugins?.tooltip?.callbacks,
-                  // Add custom tooltip title to show full datetime for hourly view
-                  title: (items) => {
-                    if (items.length > 0) {
-                      const index = items[0].dataIndex;
-                      const sortedDates = [
-                        ...consumptionData,
-                        ...generationData,
-                      ]
-                        .map((item) => getDateField(item))
-                        .sort(
-                          (a, b) =>
-                            new Date(a).getTime() - new Date(b).getTime()
-                        );
-
-                      if (index < sortedDates.length) {
-                        try {
-                          const date = parseISO(sortedDates[index]);
-                          return format(date, "MMM dd, yyyy h:mm a");
-                        } catch (e) {
-                          return items[0].label || "";
-                        }
-                      }
-                    }
-                    return items[0]?.label || "";
-                  },
-                },
+              title: {
+                ...options.plugins?.title,
+                display: false,
               },
             },
           }}
         />
-      </div>
-    );
-  }
-
-  // Default chart rendering based on chart type
-  return (
-    <div style={{ height }}>
-      {chartType === "line" ? (
-        <Line data={chartData as ChartData<"line">} options={options} />
       ) : chartType === "bar" ? (
-        <Bar data={chartData as ChartData<"bar">} options={options} />
+        <Bar
+          data={chartData as ChartData<"bar">}
+          options={{
+            ...options,
+            plugins: {
+              ...options.plugins,
+              title: {
+                ...options.plugins?.title,
+                display: false,
+              },
+            },
+          }}
+        />
       ) : (
         // Mixed chart type (consumption as bars, generation as line)
-        <Bar data={chartData as ChartData<"bar">} options={options} />
+        <Bar
+          data={chartData as ChartData<"bar">}
+          options={{
+            ...options,
+            plugins: {
+              ...options.plugins,
+              title: {
+                ...options.plugins?.title,
+                display: false,
+              },
+            },
+          }}
+        />
       )}
     </div>
   );

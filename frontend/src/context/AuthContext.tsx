@@ -5,6 +5,7 @@ import {
   useReducer,
   ReactNode,
 } from "react";
+import { jwtDecode } from "jwt-decode";
 import { AuthState, User } from "../types";
 import { authApi } from "../services/api";
 
@@ -125,6 +126,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     initAuth();
   }, []);
+
+  // Monitor token expiration and auto logout
+  useEffect(() => {
+    if (state.token) {
+      try {
+        const decoded: { exp: number } = jwtDecode(state.token);
+        const expiresAt = decoded.exp * 1000; // convert to milliseconds
+        const timeout = expiresAt - Date.now();
+        if (timeout > 0) {
+          const timer = setTimeout(() => {
+            logout();
+          }, timeout);
+          return () => clearTimeout(timer);
+        } else {
+          // Token is already expired
+          logout();
+        }
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        logout();
+      }
+    }
+  }, [state.token]);
 
   // Login function
   const login = async (username: string, password: string) => {

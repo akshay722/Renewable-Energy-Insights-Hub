@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Renewable Energy Insights Hub - AWS Infrastructure"
+Description: "Renewable Energy Insights Hub - AWS Infrastructure (Free Tier Compatible)"
 
 Parameters:
   Environment:
@@ -114,7 +114,7 @@ Resources:
         - Key: Name
           Value: !Sub ${Environment}-DBSubnetGroup
 
-  # RDS MySQL Instance
+  # RDS MySQL Instance - Free Tier Eligible
   RDSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -130,13 +130,13 @@ Resources:
     Type: AWS::RDS::DBInstance
     Properties:
       AllocatedStorage: 20
-      DBInstanceClass: db.t3.micro
+      DBInstanceClass: db.t2.micro # Free tier eligible
       Engine: mysql
       EngineVersion: 8.0
       MasterUsername: !Ref DBUsername
       MasterUserPassword: !Ref DBPassword
       DBName: renewable_energy_db
-      MultiAZ: true
+      MultiAZ: false # Cost optimization - disable Multi-AZ for free tier
       StorageType: gp2
       DBSubnetGroupName: !Ref DBSubnetGroup
       VPCSecurityGroups:
@@ -146,7 +146,7 @@ Resources:
           Value: !Sub ${Environment}-RenewableEnergyDB
     DeletionPolicy: Snapshot
 
-  # S3 Bucket for Frontend
+  # S3 Bucket for Frontend - Free Tier Eligible
   FrontendBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -160,6 +160,11 @@ Resources:
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: index.html
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 1 # Remove old versions quickly to save space
 
   FrontendBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -176,7 +181,7 @@ Resources:
               StringEquals:
                 "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
 
-  # CloudFront Distribution
+  # CloudFront Distribution - Free Tier Eligible with proper configuration
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -189,6 +194,7 @@ Resources:
         Enabled: true
         DefaultRootObject: index.html
         HttpVersion: http2
+        PriceClass: PriceClass_100 # Cost optimization - use only US, Canada, and Europe edge locations
         DefaultCacheBehavior:
           AllowedMethods:
             - GET
@@ -200,15 +206,17 @@ Resources:
             Cookies:
               Forward: none
           ViewerProtocolPolicy: redirect-to-https
+          MinTTL: 86400 # 1 day cache to reduce requests
+          DefaultTTL: 86400
+          MaxTTL: 31536000 # 1 year for static assets
         CustomErrorResponses:
           - ErrorCode: 404
             ResponseCode: 200
             ResponsePagePath: /index.html
-        PriceClass: PriceClass_100
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
 
-  # Elastic Beanstalk for Backend
+  # Elastic Beanstalk for Backend - Free Tier Eligible with t2.micro
   BeanstalkSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -246,15 +254,33 @@ Resources:
       SolutionStackName: "64bit Amazon Linux 2 v3.5.0 running Python 3.10"
       VersionLabel: !Ref BeanstalkApplicationVersion
       OptionSettings:
+        # Use t2.micro instance type (Free Tier eligible)
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: InstanceType
+          Value: t2.micro
+
+        # Use single instance environment (most cost-effective)
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: SingleInstance
+
+        # Disable load balancer since we're using single instance
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: LoadBalancerType
+          Value: application
+
+        # VPC Configuration
         - Namespace: aws:ec2:vpc
           OptionName: VPCId
           Value: !Ref VPC
         - Namespace: aws:ec2:vpc
           OptionName: Subnets
-          Value: !Join [",", [!Ref PrivateSubnet1, !Ref PrivateSubnet2]]
+          Value: !Ref PublicSubnet1
         - Namespace: aws:ec2:vpc
           OptionName: ELBSubnets
           Value: !Join [",", [!Ref PublicSubnet1, !Ref PublicSubnet2]]
+
+        # Environment variables
         - Namespace: aws:elasticbeanstalk:application:environment
           OptionName: DB_HOST
           Value: !GetAtt MySQLDatabase.Endpoint.Address

@@ -1,28 +1,37 @@
-# Renewable Energy Insights Hub - AWS Deployment Guide
+# Renewable Energy Insights Hub - AWS Free Tier Deployment Guide
 
-This document outlines the steps to deploy the Renewable Energy Insights Hub application to AWS.
+This document outlines the steps to deploy the Renewable Energy Insights Hub application to AWS using resources eligible for the AWS Free Tier.
+
+## Free Tier Benefits
+
+This deployment is designed to stay within AWS Free Tier limits:
+
+- **EC2**: Uses t2.micro instances (750 hours/month free)
+- **RDS**: Uses db.t2.micro single-AZ (750 hours/month free)
+- **S3**: Minimal storage with lifecycle policies (5GB free)
+- **CloudFront**: Optimized caching (50GB transfer + 2M requests free)
 
 ## Architecture Overview
 
 The application is deployed using the following AWS services:
 
 - **Frontend**: S3 + CloudFront (Static website hosting with CDN)
-- **Backend**: Elastic Beanstalk (FastAPI application)
-- **Database**: Amazon RDS for MySQL
+- **Backend**: Elastic Beanstalk with Single Instance (FastAPI application)
+- **Database**: Amazon RDS for MySQL (Single AZ)
 - **Infrastructure**: CloudFormation for infrastructure as code
 
 ## Prerequisites
 
 Before deploying, ensure you have:
 
-1. AWS Account with appropriate permissions
+1. AWS Account with Free Tier eligibility
 2. AWS CLI installed and configured
 3. GitHub or GitLab account for CI/CD
 4. Domain name (optional but recommended for production)
 
 ## AWS Resources Setup
 
-### Option 1: Using CloudFormation Template
+### Option 1: Using CloudFormation Template (Recommended)
 
 1. Login to your AWS account
 2. Navigate to CloudFormation
@@ -41,14 +50,15 @@ Follow these steps if you prefer to set up resources manually:
 
 #### 1. Database Setup (RDS)
 
-1. Create an RDS MySQL 8.0 instance
-2. Note the endpoint, username, password, and database name
-3. Configure security groups to allow connections from Elastic Beanstalk
+1. Create an RDS MySQL 8.0 db.t2.micro instance (Free Tier eligible)
+2. **Important**: Disable Multi-AZ deployment to stay within Free Tier
+3. Set storage to 20GB general purpose SSD
+4. Configure security groups to allow connections from Elastic Beanstalk
 
 #### 2. Backend Setup (Elastic Beanstalk)
 
 1. Create a new Elastic Beanstalk application
-2. Create an environment using Python 3.10 platform
+2. Create a SingleInstance environment (not Load Balanced) using t2.micro
 3. Configure environment properties:
    - `DB_HOST`: RDS endpoint
    - `DB_PORT`: RDS port (usually 3306)
@@ -62,12 +72,27 @@ Follow these steps if you prefer to set up resources manually:
 #### 3. Frontend Setup (S3 + CloudFront)
 
 1. Create an S3 bucket for static hosting
-2. Create a CloudFront distribution pointing to the S3 bucket
-3. Configure the distribution:
-   - Origin: S3 bucket
-   - Behaviors: Redirect HTTP to HTTPS
-   - Error pages: 404 -> /index.html (200)
-   - SSL: Use ACM certificate if you have a custom domain
+2. Set up lifecycle rules to delete old versions quickly
+3. Create a CloudFront distribution with PriceClass_100
+4. Configure proper caching (TTL) to minimize requests
+
+## Cost Control Measures
+
+To ensure you stay within the Free Tier limits:
+
+1. **Set up AWS Budgets and Billing Alarms**
+
+   - Create a budget with $1 threshold
+   - Set up alerts at 80% of Free Tier usage
+
+2. **Monitor Usage**
+
+   - Regularly check the AWS Free Tier usage dashboard
+   - Watch for services approaching limits
+
+3. **Clean up Unused Resources**
+   - Delete the CloudFormation stack when not in use
+   - Or stop the RDS instance when not actively developing
 
 ## CI/CD Setup
 
@@ -110,8 +135,8 @@ HTTPS is enabled automatically:
 ## Monitoring and Logging
 
 - Access EC2 instance logs in Elastic Beanstalk console
-- Configure CloudWatch for advanced monitoring
-- Set up CloudWatch Alarms for important metrics
+- Configure CloudWatch basic monitoring (free tier eligible)
+- Avoid detailed monitoring which incurs costs
 
 ## Troubleshooting
 
@@ -123,16 +148,25 @@ Common issues:
 
 ## Estimated Costs
 
-Monthly estimated costs (US East region):
+Monthly estimated costs with Free Tier eligibility:
 
-- RDS MySQL t3.micro: ~$15-30/month
-- Elastic Beanstalk (t3.micro): ~$15-30/month
-- S3 + CloudFront: ~$1-5/month (depends on traffic)
-- Total: ~$31-65/month for a basic setup
+- RDS MySQL db.t2.micro (Single AZ): $0 for first 12 months (Free Tier)
+- Elastic Beanstalk (t2.micro): $0 for first 12 months (Free Tier)
+- S3 + CloudFront: $0-1/month with modest traffic (Free Tier)
+- Total: **$0-1/month** for first 12 months with proper configuration
 
-## Next Steps
+## Cleaning Up
 
-- Set up proper DNS with Route 53
-- Configure backups for RDS
-- Set up monitoring and alerting
-- Implement auto-scaling for Elastic Beanstalk
+If you want to avoid any potential charges:
+
+1. Delete the CloudFormation stack when done with the assignment
+2. Verify all resources are terminated in the AWS Console
+3. Check AWS Billing dashboard for any unexpected charges
+
+## Next Steps After Free Tier Period
+
+After the 12-month Free Tier period:
+
+- Consider Reserved Instances for continued cost savings
+- Evaluate if you need to scale up any resources
+- Implement auto-scaling for variable workloads

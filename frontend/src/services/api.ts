@@ -6,11 +6,16 @@ import {
   EnergySummary,
 } from "../types";
 
+// Get API URL from environment variables
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+const IS_PRODUCTION = import.meta.env.VITE_ENV === "production";
+
 // Create axios instance with base URL and default headers
 const api = axios.create({
-  baseURL: "http://localhost:8000/api/v1",
-  // Add longer timeout for development
-  timeout: 10000,
+  baseURL: API_BASE_URL,
+  // Longer timeout for production environments
+  timeout: IS_PRODUCTION ? 30000 : 10000,
 });
 
 // Add response interceptor for error handling

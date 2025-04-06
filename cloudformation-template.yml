@@ -1,0 +1,309 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Renewable Energy Insights Hub - AWS Infrastructure"
+
+Parameters:
+  Environment:
+    Description: The deployment environment
+    Type: String
+    Default: Production
+    AllowedValues:
+      - Production
+      - Staging
+      - Development
+
+  DBUsername:
+    Description: Database admin username
+    Type: String
+    MinLength: 1
+    MaxLength: 16
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+    Default: dbadmin
+
+  DBPassword:
+    Description: Database admin password
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: must contain only alphanumeric characters.
+
+  DomainName:
+    Description: The domain name for the application
+    Type: String
+    Default: renewableenergyinsightshub.com
+
+Resources:
+  # VPC and Network Configuration
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-RenewableEnergyVPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-PublicSubnet1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-PublicSubnet2
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: 10.0.3.0/24
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-PrivateSubnet1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: 10.0.4.0/24
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-PrivateSubnet2
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-IGW
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Database Subnet Group
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: DB subnet group for RenewableEnergyInsightsHub
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-DBSubnetGroup
+
+  # RDS MySQL Instance
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS MySQL
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref BeanstalkSecurityGroup
+
+  MySQLDatabase:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 20
+      DBInstanceClass: db.t3.micro
+      Engine: mysql
+      EngineVersion: 8.0
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: renewable_energy_db
+      MultiAZ: true
+      StorageType: gp2
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !GetAtt RDSSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-RenewableEnergyDB
+    DeletionPolicy: Snapshot
+
+  # S3 Bucket for Frontend
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub frontend-${AWS::AccountId}-${Environment}
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${FrontendBucket}/*"
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            Id: S3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        Enabled: true
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          TargetOriginId: S3Origin
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  # Elastic Beanstalk for Backend
+  BeanstalkSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Elastic Beanstalk
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  BeanstalkApplicationVersion:
+    Type: AWS::ElasticBeanstalk::ApplicationVersion
+    Properties:
+      ApplicationName: !Ref BeanstalkApplication
+      Description: Initial version
+      SourceBundle:
+        S3Bucket: !Sub "elasticbeanstalk-${AWS::Region}-${AWS::AccountId}"
+        S3Key: initial-version.zip
+
+  BeanstalkApplication:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      Description: Renewable Energy Insights Hub API
+
+  BeanstalkEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName: !Ref BeanstalkApplication
+      EnvironmentName: !Sub renewable-energy-api-${Environment}
+      SolutionStackName: "64bit Amazon Linux 2 v3.5.0 running Python 3.10"
+      VersionLabel: !Ref BeanstalkApplicationVersion
+      OptionSettings:
+        - Namespace: aws:ec2:vpc
+          OptionName: VPCId
+          Value: !Ref VPC
+        - Namespace: aws:ec2:vpc
+          OptionName: Subnets
+          Value: !Join [",", [!Ref PrivateSubnet1, !Ref PrivateSubnet2]]
+        - Namespace: aws:ec2:vpc
+          OptionName: ELBSubnets
+          Value: !Join [",", [!Ref PublicSubnet1, !Ref PublicSubnet2]]
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: DB_HOST
+          Value: !GetAtt MySQLDatabase.Endpoint.Address
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: DB_PORT
+          Value: !GetAtt MySQLDatabase.Endpoint.Port
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: DB_NAME
+          Value: renewable_energy_db
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: DB_USER
+          Value: !Ref DBUsername
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: DB_PASSWORD
+          Value: !Ref DBPassword
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: ENVIRONMENT
+          Value: production
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: FRONTEND_URL
+          Value: !Sub https://${CloudFrontDistribution.DomainName}
+
+Outputs:
+  VPCID:
+    Description: The ID of the VPC
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-VPCID"
+
+  RDSEndpoint:
+    Description: The endpoint of the database
+    Value: !GetAtt MySQLDatabase.Endpoint.Address
+    Export:
+      Name: !Sub "${AWS::StackName}-RDSEndpoint"
+
+  BeanstalkURL:
+    Description: The URL of the Elastic Beanstalk environment
+    Value: !GetAtt BeanstalkEnvironment.EndpointURL
+    Export:
+      Name: !Sub "${AWS::StackName}-BeanstalkURL"
+
+  CloudFrontDomainName:
+    Description: The domain name of the CloudFront distribution
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudFrontDomain"
+
+  S3BucketName:
+    Description: The name of the S3 bucket for the frontend
+    Value: !Ref FrontendBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-FrontendBucket"

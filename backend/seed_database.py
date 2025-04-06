@@ -4,7 +4,7 @@ import logging
 from sqlalchemy.sql import text
 from database import engine, SessionLocal, Base
 from models.user import User
-from models.energy import EnergyConsumption, EnergyGeneration
+from models.energy_data import EnergyConsumption, EnergyGeneration
 from datetime import datetime, timedelta
 import random
 from werkzeug.security import generate_password_hash

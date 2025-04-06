@@ -121,3 +121,59 @@ export interface EnergyFilter extends DateRangeFilter {
   source_type?: EnergySourceType[];
   project_id?: number;
 }
+
+// Alert types
+export interface Alert {
+  id: string;
+  name: string;
+  type: "consumption" | "generation";
+  threshold: number;
+  condition: "above" | "below";
+  active: boolean;
+  project_id: number | null; // null means global alert
+  global: boolean; // true for global alerts across all projects
+}
+
+// Visualization types
+export interface SavedVisualization {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  chartView: "graph" | "pie";
+  dataType: "consumption" | "generation" | "both";
+  sourceFilters: EnergySourceType[];
+  timeFrame: "hourly" | "daily" | "weekly";
+  project_id: number | null; // null means global visualization
+  global: boolean; // true for global visualizations across all projects
+}
+
+// Helper functions for alert management
+export const getAlertsForProject = (
+  alerts: Alert[],
+  projectId: number | null
+): Alert[] => {
+  if (projectId === null) {
+    return alerts.filter((alert) => alert.global);
+  }
+  return alerts.filter(
+    (alert) => alert.global || alert.project_id === projectId
+  );
+};
+
+// Helper functions for visualization management
+export const getVisualizationsForProject = (
+  visualizations: SavedVisualization[],
+  projectId: number | null
+): SavedVisualization[] => {
+  if (projectId === null) {
+    return visualizations.filter((viz) => viz.global);
+  }
+  return visualizations.filter(
+    (viz) => viz.global || viz.project_id === projectId
+  );
+};
+
+// Storage keys
+export const ALERTS_STORAGE_KEY = "energyAlerts";
+export const VISUALIZATIONS_STORAGE_KEY = "savedVisualizations";

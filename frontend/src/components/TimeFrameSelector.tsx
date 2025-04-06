@@ -16,6 +16,16 @@ const TimeFrameSelector: React.FC = ({}) => {
         <h3 className="text-sm font-medium text-gray-700 mb-2">Time Frame</h3>
         <div className="flex flex-wrap gap-2">
           <button
+            onClick={() => setTimeFrame(TimeFrame.TODAY)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${
+              timeFrame === TimeFrame.TODAY
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Today
+          </button>
+          <button
             onClick={() => setTimeFrame(TimeFrame.LAST_7_DAYS)}
             className={`px-3 py-1.5 rounded-md text-sm font-medium ${
               timeFrame === TimeFrame.LAST_7_DAYS
@@ -44,16 +54,6 @@ const TimeFrameSelector: React.FC = ({}) => {
             }`}
           >
             Last 90 Days
-          </button>
-          <button
-            onClick={() => setTimeFrame(TimeFrame.LAST_YEAR)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-              timeFrame === TimeFrame.LAST_YEAR
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Last Year
           </button>
           <DateRangePicker
             startDate={startDate}

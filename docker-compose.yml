@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Connect to the host machine's database
+      - DATABASE_URL=mysql+pymysql://root:Qywter%40123@host.docker.internal:3306/renewable_energy_db
+    volumes:
+      - ./backend:/app
+    command: ["/bin/bash", "/app/start.sh"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend

@@ -126,8 +126,95 @@ Resources:
           ToPort: 3306
           SourceSecurityGroupId: !Ref BeanstalkSecurityGroup
 
+  # Store the database initialization script in S3
+  DatabaseScriptBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub db-scripts-${AWS::AccountId}-${Environment}
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 1
+
+  # Upload the SQL script to S3
+  UploadDBScriptLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: AllowS3Upload
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: !Sub arn:aws:s3:::db-scripts-${AWS::AccountId}-${Environment}/*
+
+  UploadDBScriptLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt UploadDBScriptLambdaExecutionRole.Arn
+      Runtime: python3.9
+      Timeout: 60
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          import os
+
+          def handler(event, context):
+            try:
+              if event['RequestType'] in ['Create', 'Update']:
+                s3 = boto3.client('s3')
+                bucket_name = event['ResourceProperties']['BucketName']
+                script_content = event['ResourceProperties']['ScriptContent']
+                
+                # Upload the script to S3
+                s3.put_object(
+                  Bucket=bucket_name,
+                  Key='init-db-with-data.sql',
+                  Body=script_content
+                )
+                
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, {
+                  'ScriptUrl': f's3://{bucket_name}/init-db-with-data.sql'
+                })
+              else:
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+            except Exception as e:
+              print(f"Error: {str(e)}")
+              cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+  UploadDBScriptCustomResource:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt UploadDBScriptLambda.Arn
+      BucketName: !Ref DatabaseScriptBucket
+      # Include your dump script content here or use ParameterStore for large content
+      ScriptContent: |
+        -- Initialize database with mock data
+        CREATE DATABASE IF NOT EXISTS renewable_energy_db;
+        USE renewable_energy_db;
+
+        -- Basic structure will be created by application on startup
+        -- Add seed data statements here
+
   MySQLDatabase:
     Type: AWS::RDS::DBInstance
+    DependsOn: UploadDBScriptCustomResource
     Properties:
       AllocatedStorage: 20
       DBInstanceClass: db.t2.micro # Free tier eligible

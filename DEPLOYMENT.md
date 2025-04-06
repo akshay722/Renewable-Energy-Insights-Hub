@@ -76,6 +76,40 @@ Follow these steps if you prefer to set up resources manually:
 3. Create a CloudFront distribution with PriceClass_100
 4. Configure proper caching (TTL) to minimize requests
 
+## Database Migration and Mock Data
+
+The application comes with pre-configured database seeding to ensure your mock data is available in any environment:
+
+### Automatic Database Seeding
+
+1. **During Deployment**: The seed script runs automatically after deployment to RDS
+2. **Seed Script Location**: `backend/seed_database.py`
+3. **Seed Data Content**:
+   - Demo users (demo/password, test/password123, admin/admin123)
+   - 30 days of mock energy consumption and generation data
+   - Data for multiple energy sources (solar, wind, grid)
+
+### Customizing Seed Data
+
+If you want to modify the mock data:
+
+1. Edit `backend/seed_database.py` to adjust the data generation logic
+2. For using your own data dump:
+   - Create a SQL dump of your local database:
+     ```
+     mysqldump -u root -pYourPassword renewable_energy_db > your-data-dump.sql
+     ```
+   - In CloudFormation template, replace the script content in `UploadDBScriptCustomResource`
+   - Or manually import your SQL data to RDS after deployment
+
+### Checking Seed Status
+
+You can verify if the seeding was successful by:
+
+1. Checking seed logs: `cat /var/log/app/seed-database.log` on the EC2 instance
+2. Connecting to the RDS database and querying the tables
+3. Using the application and verifying data appears in the UI
+
 ## Cost Control Measures
 
 To ensure you stay within the Free Tier limits:
@@ -114,17 +148,6 @@ The repository includes GitHub Actions workflows for CI/CD:
    - Builds and deploys frontend to S3 on merges to main
    - Invalidates CloudFront cache
 
-## Database Migration
-
-Initial database setup:
-
-1. The database schema will be created automatically on first deployment
-2. For seeding data, connect to the Elastic Beanstalk instance and run:
-   ```
-   cd /var/app/current
-   python -m seed_database
-   ```
-
 ## SSL/HTTPS Configuration
 
 HTTPS is enabled automatically:
@@ -145,6 +168,7 @@ Common issues:
 1. **Connection errors**: Check security groups and network ACLs
 2. **Deployment failures**: Check Elastic Beanstalk logs
 3. **Frontend not updating**: Verify CloudFront cache invalidation
+4. **Missing data**: Check seed script logs at `/var/log/app/seed-database.log`
 
 ## Estimated Costs
 

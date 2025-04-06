@@ -14,6 +14,8 @@ A FastAPI-based backend service for the Renewable Energy Insights Hub that provi
 
 ## Setup
 
+### Local Development
+
 1. Create a virtual environment:
 
 ```bash
@@ -45,7 +47,23 @@ CREATE DATABASE renewable_energy_db;
 exit;
 ```
 
+### Docker Deployment
+
+The backend can be run in Docker, connecting to your host machine's MySQL database:
+
+1. Ensure your local MySQL database is running and accessible
+2. The database connection in Docker uses `host.docker.internal` to connect to your host machine's MySQL:
+   ```
+   DATABASE_URL=mysql+pymysql://root:Qywter@123@host.docker.internal:3306/renewable_energy_db
+   ```
+3. Run the Docker container from the project root:
+   ```bash
+   docker compose up -d backend
+   ```
+
 ## Running the Application
+
+### Local Development
 
 Start the development server:
 
@@ -54,6 +72,10 @@ uvicorn main:app --reload
 ```
 
 The API will be available at `http://localhost:8000`
+
+### Docker
+
+The application starts automatically when the Docker container runs. The API will be available at `http://localhost:8000`
 
 ## API Documentation
 
@@ -82,25 +104,27 @@ The API will be available at `http://localhost:8000`
 - `POST /api/v1/energy/consumption/batch-create` - Create multiple records
 - `GET /api/v1/energy/consumption/aggregate/daily` - Get daily aggregated data
 
-### Energy Generation
-
-- `POST /api/v1/energy/generation/` - Create new generation record
-- `GET /api/v1/energy/generation/` - Get generation records with filtering
-- `GET /api/v1/energy/generation/{generation_id}` - Get specific generation record
-- `PUT /api/v1/energy/generation/{generation_id}` - Update generation record
-- `DELETE /api/v1/energy/generation/{generation_id}` - Delete generation record
-- `POST /api/v1/energy/generation/batch-create` - Create multiple records
-- `GET /api/v1/energy/generation/aggregate/daily` - Get daily aggregated data
-
 ### Insights
 
 - `GET /api/v1/insights/summary` - Get energy summary comparing consumption and generation
-- `GET /api/v1/insights/recommendations` - Get personalized energy recommendations
-- `GET /api/v1/insights/trends` - Get energy usage trends over time
 
-### Mock Data
+## Troubleshooting
 
-- `POST /api/v1/data-sample/generate` - Generate sample data for testing and demos
+### Database Connection Issues
+
+- When running in Docker, make sure your host MySQL server:
+
+  - Is running and accessible
+  - Allows connections from Docker (check bind-address in MySQL config)
+  - Has the correct username/password as specified in the connection string
+  - Has the renewable_energy_db database created
+
+- You can test the connection from inside the container:
+  ```bash
+  docker compose exec backend bash
+  python -c "import pymysql; pymysql.connect(host='host.docker.internal', user='root', password='Qywter@123', database='renewable_energy_db')"
+  ```
+  If no error appears, the connection is successful.
 
 ## Project Structure
 

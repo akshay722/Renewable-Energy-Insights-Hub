@@ -17,6 +17,7 @@ interface SourceDistributionChartProps {
   chartType?: "pie" | "doughnut";
   height?: number;
   showGreenVsNonGreen?: boolean;
+  resolutionControls?: React.ReactNode;
 }
 
 // Energy source color mapping
@@ -56,7 +57,7 @@ const greenVsNonGreenColors = {
   nonGreen: {
     border: "rgb(100, 116, 139)",
     background: "rgba(100, 116, 139, 0.7)",
-  }
+  },
 };
 
 // Default colors for unknown sources
@@ -74,6 +75,7 @@ const SourceDistributionChart = ({
   chartType = "doughnut",
   height = 300,
   showGreenVsNonGreen = false,
+  resolutionControls,
 }: SourceDistributionChartProps) => {
   // Format source names for display
   const formatSourceName = (name: string): string => {
@@ -84,12 +86,12 @@ const SourceDistributionChart = ({
   const chartData = useMemo<ChartData<"pie" | "doughnut">>(() => {
     // If showing green vs non-green, transform the data
     if (showGreenVsNonGreen) {
-      const nonGreenSources = ['grid'];
-      
+      const nonGreenSources = ["grid"];
+
       // Calculate totals
       let greenTotal = 0;
       let nonGreenTotal = 0;
-      
+
       Object.entries(data).forEach(([source, value]) => {
         if (nonGreenSources.includes(source)) {
           nonGreenTotal += value;
@@ -97,26 +99,26 @@ const SourceDistributionChart = ({
           greenTotal += value;
         }
       });
-      
+
       return {
-        labels: ['Renewable Energy', 'Non-Renewable Energy'],
+        labels: ["Renewable Energy", "Non-Renewable Energy"],
         datasets: [
           {
             data: [greenTotal, nonGreenTotal],
             backgroundColor: [
               greenVsNonGreenColors.green.background,
-              greenVsNonGreenColors.nonGreen.background
+              greenVsNonGreenColors.nonGreen.background,
             ],
             borderColor: [
               greenVsNonGreenColors.green.border,
-              greenVsNonGreenColors.nonGreen.border
+              greenVsNonGreenColors.nonGreen.border,
             ],
             borderWidth: 1,
           },
         ],
       };
     }
-    
+
     // Normal source distribution chart
     const labels = Object.keys(data).map(formatSourceName);
     const values = Object.values(data);
@@ -174,10 +176,38 @@ const SourceDistributionChart = ({
 
   return (
     <div style={{ height }}>
+      <div className="mb-2 flex justify-between items-center">
+        {title && <h3 className="text-lg font-semibold">{title}</h3>}
+        {resolutionControls}
+      </div>
       {chartType === "pie" ? (
-        <Pie data={chartData as ChartData<"pie">} options={options} />
+        <Pie
+          data={chartData as ChartData<"pie">}
+          options={{
+            ...options,
+            plugins: {
+              ...options.plugins,
+              title: {
+                ...options.plugins.title,
+                display: false,
+              },
+            },
+          }}
+        />
       ) : (
-        <Doughnut data={chartData as ChartData<"doughnut">} options={options} />
+        <Doughnut
+          data={chartData as ChartData<"doughnut">}
+          options={{
+            ...options,
+            plugins: {
+              ...options.plugins,
+              title: {
+                ...options.plugins.title,
+                display: false,
+              },
+            },
+          }}
+        />
       )}
     </div>
   );

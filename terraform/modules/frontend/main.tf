@@ -6,6 +6,13 @@ resource "aws_s3_bucket" "frontend" {
     Environment = "Production"
     Terraform   = "true"
   }
+  
+  lifecycle {
+    # This prevents errors when the bucket already exists
+    ignore_changes = [bucket]
+    # This prevents destruction of the bucket when Terraform runs
+    prevent_destroy = true
+  }
 }
 
 # Enable website hosting

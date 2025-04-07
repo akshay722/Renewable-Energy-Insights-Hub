@@ -1,7 +1,7 @@
 resource "aws_db_instance" "database" {
   identifier           = "renewable-energy-db"
   engine               = "mysql"
-  engine_version       = "8.0"
+  engine_version       = "8.0.28"
   instance_class       = "db.t2.micro" # Free tier eligible
   db_name              = var.db_name
   username             = var.db_user
@@ -54,6 +54,12 @@ resource "aws_db_parameter_group" "renewable_energy" {
     name  = "character_set_client"
     value = "utf8"
   }
+  
+  lifecycle {
+    # This prevents errors when the parameter group already exists
+    create_before_destroy = true
+    ignore_changes = [parameter]
+  }
 }
 
 # Security group for database access
@@ -80,6 +86,11 @@ resource "aws_security_group" "db_security_group" {
   
   tags = {
     Name = "renewable-energy-db-sg"
+  }
+  
+  lifecycle {
+    # This prevents errors when the security group already exists
+    create_before_destroy = true
   }
 }
 

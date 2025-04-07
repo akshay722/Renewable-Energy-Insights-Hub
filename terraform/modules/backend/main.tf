@@ -1,11 +1,25 @@
 resource "aws_elastic_beanstalk_application" "app" {
   name        = var.app_name
   description = "Renewable Energy Insights Hub Application"
+  
+  lifecycle {
+    # This prevents errors when the application already exists
+    create_before_destroy = true
+    # This makes Terraform import any existing app with the same name
+    prevent_destroy = true
+  }
 }
 
 # S3 bucket for storing the application version
 resource "aws_s3_bucket" "app_versions" {
   bucket = "${var.app_name}-app-versions"
+  
+  lifecycle {
+    # This prevents errors when the bucket already exists
+    ignore_changes = [bucket]
+    # This prevents destruction of the bucket when Terraform runs
+    prevent_destroy = true
+  }
 }
 
 resource "aws_elastic_beanstalk_environment" "env" {
@@ -95,6 +109,13 @@ resource "aws_iam_role" "eb_service_role" {
       }
     ]
   })
+  
+  lifecycle {
+    # This prevents errors when the role already exists
+    create_before_destroy = true
+    # Ignore changes to the policy to prevent conflicts
+    ignore_changes = [assume_role_policy]
+  }
 }
 
 resource "aws_iam_role" "eb_instance_role" {
@@ -112,6 +133,13 @@ resource "aws_iam_role" "eb_instance_role" {
       }
     ]
   })
+  
+  lifecycle {
+    # This prevents errors when the role already exists
+    create_before_destroy = true
+    # Ignore changes to the policy to prevent conflicts
+    ignore_changes = [assume_role_policy]
+  }
 }
 
 resource "aws_iam_instance_profile" "eb_instance_profile" {

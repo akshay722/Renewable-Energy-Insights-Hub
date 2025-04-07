@@ -65,8 +65,6 @@ resource "aws_db_parameter_group" "renewable_energy" {
   }
   
   lifecycle {
-    # This prevents errors when the parameter group already exists
-    create_before_destroy = true
     ignore_changes = [parameter]
   }
 }
@@ -98,8 +96,6 @@ resource "aws_security_group" "db_security_group" {
   }
   
   lifecycle {
-    # This prevents errors when the security group already exists
-    create_before_destroy = true
   }
 }
 

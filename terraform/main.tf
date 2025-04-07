@@ -24,8 +24,9 @@ provider "aws" {
 
 # Create security groups first
 resource "aws_security_group" "eb_security_group" {
-  name        = "${var.app_name}-eb-sg"
+  name        = "${var.app_name}-eb-sg-${random_id.suffix.hex}"
   description = "Security group for Elastic Beanstalk environment"
+  vpc_id      = data.aws_vpc.default.id
   
   # Allow HTTP traffic
   ingress {
@@ -54,12 +55,13 @@ resource "aws_security_group" "eb_security_group" {
   }
   
   tags = {
-    Name = "${var.app_name}-eb-sg"
+    Name = "${var.app_name}-eb-sg-${random_id.suffix.hex}"
   }
-  
-  lifecycle {
-    create_before_destroy = true
-  }
+}
+
+# Add random suffix to ensure unique names
+resource "random_id" "suffix" {
+  byte_length = 4
 }
 
 # S3 Frontend Module

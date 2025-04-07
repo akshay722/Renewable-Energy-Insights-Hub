@@ -51,19 +51,23 @@ jobs:
       - name: Import existing resources (if any)
         run: |
           # This step tries to import existing resources and ignores errors if they don't exist
+          echo "Importing S3 buckets..."
           terraform import module.frontend.aws_s3_bucket.frontend renewable-energy-frontend-west-2 || echo "Frontend bucket doesn't exist yet"
           terraform import module.backend.aws_s3_bucket.app_versions renewable-energy-app-app-versions || echo "App versions bucket doesn't exist yet" 
+
+          echo "Importing Elastic Beanstalk application and environment..."
           terraform import module.backend.aws_elastic_beanstalk_application.app renewable-energy-app || echo "EB application doesn't exist yet"
+          terraform import module.backend.aws_elastic_beanstalk_environment.env renewable-energy-app/production-env || echo "EB environment doesn't exist yet"
+
+          echo "Importing database resources..."
           terraform import module.database.aws_db_parameter_group.renewable_energy renewable-energy-pg || echo "DB parameter group doesn't exist yet"
           terraform import module.database.aws_security_group.db_security_group $(aws ec2 describe-security-groups --filters Name=group-name,Values=renewable-energy-db-sg --query "SecurityGroups[0].GroupId" --output text || echo "sg-notfound") || echo "Security group doesn't exist yet"
+          terraform import module.database.aws_db_instance.database renewable-energy-db || echo "RDS database doesn't exist yet"
 
-          # Import IAM roles that are causing conflicts
+          echo "Importing IAM roles..."
           terraform import module.backend.aws_iam_role.eb_service_role renewable-energy-app-eb-service-role || echo "Service role doesn't exist yet"
           terraform import module.backend.aws_iam_role.eb_instance_role renewable-energy-app-eb-instance-role || echo "Instance role doesn't exist yet"
           terraform import module.backend.aws_iam_instance_profile.eb_instance_profile renewable-energy-app-eb-instance-profile || echo "Instance profile doesn't exist yet"
-
-          # Import RDS database instance
-          terraform import module.database.aws_db_instance.database renewable-energy-db || echo "RDS database doesn't exist yet"
         continue-on-error: true
 
       - name: Terraform Validate

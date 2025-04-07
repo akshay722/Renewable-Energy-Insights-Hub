@@ -83,6 +83,17 @@ resource "aws_elastic_beanstalk_environment" "env" {
     name      = "EnvironmentType"
     value     = "SingleInstance"
   }
+  
+  # Lifecycle configuration for existing environment
+  lifecycle {
+    # Prevent recreation of the environment
+    prevent_destroy = true
+    # Ignore changes to avoid unnecessary updates
+    ignore_changes = [
+      setting,
+      solution_stack_name
+    ]
+  }
 }
 
 # IAM Role for Elastic Beanstalk

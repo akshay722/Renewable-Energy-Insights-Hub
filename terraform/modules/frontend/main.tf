@@ -26,6 +26,14 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
   error_document {
     key = "index.html"
   }
+  
+  lifecycle {
+    # Prevent errors with existing website configuration
+    ignore_changes = [
+      index_document,
+      error_document
+    ]
+  }
 }
 
 # Disable Block Public Access for this bucket

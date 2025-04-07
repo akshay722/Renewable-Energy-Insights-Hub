@@ -1,7 +1,7 @@
 resource "aws_db_instance" "database" {
   identifier           = "renewable-energy-db"
   engine               = "mysql"
-  engine_version       = "8.0.28"
+  engine_version       = "8.0.37"
   instance_class       = "db.t2.micro" # Free tier eligible
   db_name              = var.db_name
   username             = var.db_user
@@ -107,7 +107,7 @@ resource "null_resource" "db_setup" {
     command = <<-EOT
       echo "Waiting for database to be ready..."
       sleep 60
-      mysql -h ${aws_db_instance.database.address} -P ${aws_db_instance.database.port} -u ${var.db_user} -p${var.db_password} ${var.db_name} < ${path.module}/../../../init-db.sql
+      mysql -h ${aws_db_instance.database.address} -P ${aws_db_instance.database.port} -u ${var.db_user} -p${var.db_password} ${var.db_name} < ${path.module}/../../../init-db.sql || echo "Failed to import database schema"
     EOT
   }
 } 

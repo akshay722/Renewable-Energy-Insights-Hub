@@ -39,6 +39,12 @@ jobs:
         with:
           terraform_version: "1.5.0"
 
+      - name: Check Available MySQL Versions
+        run: |
+          echo "Checking available MySQL versions in RDS..."
+          aws rds describe-db-engine-versions --engine mysql --query "DBEngineVersions[].EngineVersion" --output text
+        continue-on-error: true
+
       - name: Terraform Init
         run: terraform init
 

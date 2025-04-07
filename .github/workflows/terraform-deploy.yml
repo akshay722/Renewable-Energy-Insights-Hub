@@ -79,12 +79,11 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
-          # Apply with targets to create resources that don't exist yet
-          terraform apply -auto-approve -input=false || \
-          # If error occurs due to resource exists, try with specific target resources
-          terraform apply -auto-approve -input=false -target=module.frontend -target=module.database || \
-          # If everything fails, just output the state
-          terraform state list
+          # Run full Terraform apply to process all dependencies correctly
+          if ! terraform apply -auto-approve -input=false; then
+            echo "Terraform apply failed. Outputting current state for troubleshooting..."
+            terraform state list
+          fi
 
       - name: Output Environment Information
         if: success()

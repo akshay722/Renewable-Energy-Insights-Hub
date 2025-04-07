@@ -48,7 +48,7 @@ api.interceptors.request.use(
 
     // Make sure headers object exists
     if (!config.headers) {
-      config.headers = {};
+      config.headers = new axios.AxiosHeaders();
     }
 
     // Add token to auth header if available

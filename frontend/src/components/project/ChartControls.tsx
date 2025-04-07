@@ -1,5 +1,4 @@
 import React from "react";
-import Icon from "../icons/Icon";
 import { EnergySourceType } from "../../types";
 import SourceFilters from "./SourceFilters";
 

@@ -25,7 +25,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
   const [summary, setSummary] = useState<EnergySummary | null>(null);
-  const [hourlyConsumptionData, setHourlyConsumptionData] = useState<any[]>([]);
+  const [_, setHourlyConsumptionData] = useState<any[]>([]);
   const [consumptionBySource, setConsumptionBySource] = useState<
     Record<string, number>
   >({});
@@ -33,17 +33,14 @@ const Dashboard = () => {
     Record<string, number>
   >({});
 
-  // Active energy sources to display
-  const [activeSourceTypes, setActiveSourceTypes] = useState<
-    EnergySourceType[]
-  >([
+  const activeSourceTypes = [
     EnergySourceType.BIOMASS,
     EnergySourceType.WIND,
     EnergySourceType.HYDRO,
     EnergySourceType.GEOTHERMAL,
     EnergySourceType.GRID,
     EnergySourceType.SOLAR,
-  ]);
+  ];
 
   // Project selection state
   const [projects, setProjects] = useState<Project[]>([]);
@@ -79,8 +76,7 @@ const Dashboard = () => {
       const filters = {
         start_date: startDate,
         end_date: endDate,
-        source_type:
-          activeSourceTypes.length > 0 ? activeSourceTypes : undefined,
+        source_type: activeSourceTypes,
         project_id: selectedProjectId || undefined,
       };
 
@@ -136,34 +132,11 @@ const Dashboard = () => {
     }
   }, [startDate, endDate, selectedProjectId, token, isAuthenticated]);
 
-  // Calculate green vs non-green energy consumption.
-  const getGreenVsNonGreenData = (): Record<string, number> => {
-    if (!consumptionBySource || Object.keys(consumptionBySource).length === 0) {
-      return {};
-    }
-    let greenTotal = 0;
-    let nonGreenTotal = 0;
-    Object.entries(consumptionBySource).forEach(([source, value]) => {
-      if (source === "grid") {
-        nonGreenTotal += value;
-      } else {
-        greenTotal += value;
-      }
-    });
-    return {
-      "Renewable Energy": greenTotal,
-      "Non-Renewable Energy": nonGreenTotal,
-    };
-  };
-
   // Handle project change
   const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedProjectId(value ? Number(value) : null);
   };
-
-  // Prepare data for charts.
-  const greenVsNonGreenData = getGreenVsNonGreenData();
 
   return (
     <div className="space-y-6">
@@ -259,7 +232,6 @@ const Dashboard = () => {
           ) : summary &&
             (summary.total_consumption > 0 || summary.total_generation > 0) ? (
             <ConsumptionGenerationBarChart
-              summary={summary}
               consumptionBySource={consumptionBySource}
               generationBySource={generationBySource}
               height={260}

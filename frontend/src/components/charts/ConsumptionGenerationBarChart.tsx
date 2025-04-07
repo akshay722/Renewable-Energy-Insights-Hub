@@ -11,7 +11,7 @@ import {
   ChartOptions,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
-import { EnergySummary, EnergySourceType } from "../../types";
+import { EnergySourceType } from "../../types";
 
 // Register ChartJS components
 ChartJS.register(
@@ -24,7 +24,6 @@ ChartJS.register(
 );
 
 interface ConsumptionGenerationBarChartProps {
-  summary: EnergySummary | null;
   consumptionBySource: Record<string, number>;
   generationBySource: Record<string, number>;
   height?: number;
@@ -34,7 +33,6 @@ interface ConsumptionGenerationBarChartProps {
 const ConsumptionGenerationBarChart: React.FC<
   ConsumptionGenerationBarChartProps
 > = ({
-  summary,
   consumptionBySource,
   generationBySource,
   height = 300,

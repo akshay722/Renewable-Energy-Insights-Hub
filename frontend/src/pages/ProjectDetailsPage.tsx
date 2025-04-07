@@ -32,7 +32,6 @@ import ProjectHeader from "../components/project/ProjectHeader";
 import {
   getEnergyChartData,
   getFilteredSourceData,
-  hasFilteredData as checkFilteredData,
   getChartTitle,
 } from "../utils/chartDataUtils";
 
@@ -102,10 +101,8 @@ const ProjectDetailsPage = () => {
 
   // UI state
   const [isLoading, setIsLoading] = useState(true);
-  const [showSaveForm, setShowSaveForm] = useState(false);
-  const [showAlertForm, setShowAlertForm] = useState(false);
   const [triggeredAlerts, setTriggeredAlerts] = useState<string[]>([]);
-  const [showTriggeredAlerts, setShowTriggeredAlerts] = useState(false);
+  const [_, setShowTriggeredAlerts] = useState(false);
 
   // Load project details
   useEffect(() => {
@@ -303,6 +300,7 @@ const ProjectDetailsPage = () => {
   // Load energy data
   const loadEnergyData = async () => {
     if (!projectId) return;
+    console.log(summary);
 
     setIsLoading(true);
     try {
@@ -378,15 +376,6 @@ const ProjectDetailsPage = () => {
   useEffect(() => {
     loadEnergyData();
   }, [projectId, startDate, endDate, sourceFilters]);
-
-  // Check if there's data available after filtering
-  const hasFilteredData = () => {
-    return checkFilteredData(
-      consumptionBySource,
-      generationBySource,
-      sourceFilters
-    );
-  };
 
   // Get chart data based on current settings
   const getChartData = () => {

@@ -55,8 +55,6 @@ interface EnergyChartProps {
   title?: string;
   height?: number;
   timeFrame?: "hourly" | "daily" | "weekly" | "monthly";
-  startDate?: Date;
-  endDate?: Date;
   resolutionControls?: React.ReactNode;
 }
 
@@ -67,8 +65,6 @@ const EnergyChart = ({
   title = "Energy Consumption vs Generation",
   height = 300,
   timeFrame = "hourly",
-  startDate,
-  endDate,
   resolutionControls,
 }: EnergyChartProps) => {
   // Format dates based on timeframe

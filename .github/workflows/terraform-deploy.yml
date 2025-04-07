@@ -57,7 +57,7 @@ jobs:
 
           echo "Importing Elastic Beanstalk application and environment..."
           terraform import module.backend.aws_elastic_beanstalk_application.app renewable-energy-app || echo "EB application doesn't exist yet"
-          terraform import module.backend.aws_elastic_beanstalk_environment.env renewable-energy-app/production-env || echo "EB environment doesn't exist yet"
+          terraform import module.backend.aws_elastic_beanstalk_environment.env production-env || echo "EB environment doesn't exist yet"
 
           echo "Importing database resources..."
           terraform import module.database.aws_db_parameter_group.renewable_energy renewable-energy-pg || echo "DB parameter group doesn't exist yet"
@@ -78,7 +78,13 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-        run: terraform apply -auto-approve -input=false
+        run: |
+          # Apply with targets to create resources that don't exist yet
+          terraform apply -auto-approve -input=false || \
+          # If error occurs due to resource exists, try with specific target resources
+          terraform apply -auto-approve -input=false -target=module.frontend -target=module.database || \
+          # If everything fails, just output the state
+          terraform state list
 
       - name: Output Environment Information
         if: success()

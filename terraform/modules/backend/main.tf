@@ -23,7 +23,7 @@ resource "aws_s3_bucket" "app_versions" {
 }
 
 resource "aws_elastic_beanstalk_environment" "env" {
-  depends_on = [aws_security_group.eb_security_group]
+  depends_on = [module.database.aws_security_group.db_security_group]
   name                = var.env_name
   application         = aws_elastic_beanstalk_application.app.name
   solution_stack_name = var.solution_stack

@@ -34,9 +34,18 @@ resource "aws_db_instance" "database" {
     Terraform   = "true"
   }
   
-  # This prevents recreation if only the password changes
+  # Lifecycle settings to handle existing database
   lifecycle {
-    ignore_changes = [password]
+    # This prevents recreation if only the password changes
+    ignore_changes = [
+      password,
+      engine_version,
+      parameter_group_name,
+      username,
+      vpc_security_group_ids,
+      allocated_storage
+    ]
+    prevent_destroy = true
   }
 }
 

@@ -61,6 +61,9 @@ jobs:
           terraform import module.backend.aws_iam_role.eb_service_role renewable-energy-app-eb-service-role || echo "Service role doesn't exist yet"
           terraform import module.backend.aws_iam_role.eb_instance_role renewable-energy-app-eb-instance-role || echo "Instance role doesn't exist yet"
           terraform import module.backend.aws_iam_instance_profile.eb_instance_profile renewable-energy-app-eb-instance-profile || echo "Instance profile doesn't exist yet"
+
+          # Import RDS database instance
+          terraform import module.database.aws_db_instance.database renewable-energy-db || echo "RDS database doesn't exist yet"
         continue-on-error: true
 
       - name: Terraform Validate

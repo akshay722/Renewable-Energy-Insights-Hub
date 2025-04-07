@@ -40,13 +40,13 @@ resource "aws_elastic_beanstalk_environment" "env" {
     value     = aws_iam_instance_profile.eb_instance_profile.name
   }
   
+  # Environment variables
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
     name      = "FRONTEND_URL"
     value     = var.frontend_url
   }
   
-  # Database settings
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
     name      = "DB_HOST"
@@ -71,25 +71,17 @@ resource "aws_elastic_beanstalk_environment" "env" {
     value     = var.db_password
   }
   
-  # CORS Configuration
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
     name      = "ALLOW_ORIGINS"
     value     = var.frontend_url
   }
   
-  # Single instance for free tier
+  # Single instance environment (no load balancer)
   setting {
     namespace = "aws:elasticbeanstalk:environment"
     name      = "EnvironmentType"
     value     = "SingleInstance"
-  }
-  
-  # Load balancer settings (disabled for single instance)
-  setting {
-    namespace = "aws:elasticbeanstalk:environment"
-    name      = "LoadBalancerType"
-    value     = "application"
   }
 }
 

@@ -1,0 +1,120 @@
+name: Deploy Application
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "terraform/**"
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-west-2
+      BACKEND_DIR: backend
+      FRONTEND_DIR: frontend
+      EB_APP_NAME: renewable-energy-app
+      EB_ENV_NAME: production-env
+      S3_BUCKET: renewable-energy-frontend-west-2
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      # Verify database connection
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      - name: Verify database connection
+        run: |
+          DB_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier renewable-energy-db --query "DBInstances[0].Endpoint.Address" --output text)
+          echo "Checking connection to database at $DB_ENDPOINT..."
+          mysql -h $DB_ENDPOINT -u root -p${{ secrets.DB_PASSWORD }} -e "SELECT 1;" || {
+            echo "⚠️ Could not connect to database. Check credentials and security groups."
+          }
+
+      # Backend deployment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install EB CLI
+        run: pip install awsebcli
+
+      - name: Build and deploy backend
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: |
+          # Create the archive for deployment
+          zip -r ../application.zip . -x "*.git*" "*.ebextensions*"
+
+          # Initialize EB if needed
+          if [ ! -d ".elasticbeanstalk" ]; then
+            eb init ${{ env.EB_APP_NAME }} --region ${{ env.AWS_REGION }} --platform "Python 3.9"
+          fi
+
+          # Configure CORS
+          mkdir -p .ebextensions
+          cat > .ebextensions/01_cors.config << 'EOL'
+          files:
+            "/etc/nginx/conf.d/cors.conf":
+              mode: "000644"
+              owner: root
+              group: root
+              content: |
+                add_header 'Access-Control-Allow-Origin' 'http://${{ env.S3_BUCKET }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com' always;
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
+                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+                add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+          EOL
+
+          # Set environment variables
+          cat > .ebextensions/02_env.config << 'EOL'
+          option_settings:
+            aws:elasticbeanstalk:application:environment:
+              FRONTEND_URL: "http://${{ env.S3_BUCKET }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
+              ALLOW_ORIGINS: "http://${{ env.S3_BUCKET }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
+          EOL
+
+          # Deploy to Elastic Beanstalk
+          eb deploy ${{ env.EB_ENV_NAME }} --label "app-$(date +'%y%m%d_%H%M%S')"
+
+      # Frontend deployment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install frontend dependencies
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run build
+
+      - name: Deploy frontend to S3
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: |
+          # Sync the build directory to S3
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ --delete
+
+          # Verify the website configuration
+          aws s3api get-bucket-website --bucket ${{ env.S3_BUCKET }} || \
+          aws s3 website s3://${{ env.S3_BUCKET }}/ --index-document index.html --error-document index.html
+
+          echo "✅ Frontend deployed to http://${{ env.S3_BUCKET }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"

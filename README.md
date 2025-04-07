@@ -140,6 +140,37 @@ docker compose logs -f
   - Energy consumption vs. generation (line charts)
   - Source distribution pie charts
 
+## AWS Deployment with Terraform and GitHub Actions
+
+This project includes automated deployment using Terraform and GitHub Actions to deploy to AWS Free Tier:
+
+### Infrastructure as Code (Terraform)
+
+The `terraform/` directory contains the Terraform configuration for deploying:
+
+- S3 bucket for the frontend
+- Elastic Beanstalk for the Python backend
+- IAM roles and security configuration
+- CORS settings for cross-origin communication
+
+### Automated CI/CD (GitHub Actions)
+
+The `.github/workflows/` directory contains workflows for:
+
+1. **Infrastructure Deployment**: Automatically creates and updates AWS resources
+2. **Application Deployment**: Builds and deploys the application code
+3. **Budget Monitoring**: Ensures costs stay within AWS Free Tier limits
+
+### Setup and Usage
+
+1. Fork this repository
+2. Set up the required GitHub Secrets:
+   - `AWS_ROLE_TO_ASSUME`: ARN of an IAM role with deployment permissions
+   - `DB_PASSWORD`: Password for the database
+3. Push to the main branch to trigger deployment
+
+See the README files in the `terraform/` and `.github/workflows/` directories for detailed instructions.
+
 ## Deployment
 
 For deploying to AWS, see [DEPLOYMENT.md](DEPLOYMENT.md) which includes detailed instructions for:

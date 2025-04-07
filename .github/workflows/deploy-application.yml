@@ -88,6 +88,12 @@ jobs:
             aws:elasticbeanstalk:application:environment:
               FRONTEND_URL: "http://${{ env.S3_BUCKET }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
               ALLOW_ORIGINS: "http://${{ env.S3_BUCKET }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
+              ENVIRONMENT: "production"
+              DB_HOST: "renewable-energy-db.cb8k02gia2kf.us-west-2.rds.amazonaws.com"
+              DB_NAME: "renewable_energy_db"
+              DB_USER: "root"
+              DB_PASSWORD: "${{ secrets.DB_PASSWORD }}"
+              DB_PORT: "3306"
           EOL
 
           # Deploy to Elastic Beanstalk

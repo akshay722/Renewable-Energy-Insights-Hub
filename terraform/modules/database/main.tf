@@ -76,13 +76,13 @@ resource "aws_security_group" "db_security_group" {
   name        = "renewable-energy-db-sg"
   description = "Allow access to MySQL"
   
-  # Allow incoming MySQL traffic from Elastic Beanstalk security group or IP range
+  # Allow incoming MySQL traffic from Elastic Beanstalk security group
   ingress {
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # In production, restrict this to specific IPs or security groups
-    description = "MySQL access"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [module.backend.eb_security_group_id]
+    description     = "MySQL access from Elastic Beanstalk"
   }
   
   # Allow all outbound traffic

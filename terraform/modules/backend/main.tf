@@ -3,6 +3,8 @@ resource "aws_elastic_beanstalk_application" "app" {
   description = "Renewable Energy Insights Hub Application"
   
   lifecycle {
+    # This prevents errors when the application already exists
+    create_before_destroy = true
     # This makes Terraform import any existing app with the same name
     prevent_destroy = true
   }
@@ -17,46 +19,6 @@ resource "aws_s3_bucket" "app_versions" {
     ignore_changes = [bucket]
     # This prevents destruction of the bucket when Terraform runs
     prevent_destroy = true
-  }
-}
-
-# Elastic Beanstalk Security Group
-resource "aws_security_group" "eb_security_group" {
-  name        = "${var.app_name}-eb-sg"
-  description = "Security group for Elastic Beanstalk environment"
-  
-  # Allow HTTP traffic
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "HTTP"
-  }
-  
-  # Allow HTTPS traffic
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "HTTPS"
-  }
-  
-  # Allow all outbound traffic
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  
-  tags = {
-    Name = "${var.app_name}-eb-sg"
-  }
-  
-  lifecycle {
-    create_before_destroy = true
   }
 }
 
@@ -76,6 +38,13 @@ resource "aws_elastic_beanstalk_environment" "env" {
     namespace = "aws:autoscaling:launchconfiguration"
     name      = "IamInstanceProfile"
     value     = aws_iam_instance_profile.eb_instance_profile.name
+  }
+  
+  # Use the provided security group
+  setting {
+    namespace = "aws:autoscaling:launchconfiguration"
+    name      = "SecurityGroups"
+    value     = var.security_group_id
   }
   
   # Environment variables
@@ -122,16 +91,11 @@ resource "aws_elastic_beanstalk_environment" "env" {
     value     = "SingleInstance"
   }
   
-  # Add security group configuration
-  setting {
-    namespace = "aws:autoscaling:launchconfiguration"
-    name      = "SecurityGroups"
-    value     = aws_security_group.eb_security_group.id
-  }
-  
   # Lifecycle configuration for existing environment
   lifecycle {
+    # Prevent recreation of the environment
     prevent_destroy = true
+    # Ignore changes to avoid unnecessary updates
     ignore_changes = [
       setting,
       solution_stack_name

@@ -19,4 +19,10 @@ variable "db_password" {
 variable "region" {
   description = "AWS region for the database"
   type        = string
+}
+
+variable "allowed_security_group_ids" {
+  description = "List of security group IDs allowed to access the database"
+  type        = list(string)
+  default     = []
 } 

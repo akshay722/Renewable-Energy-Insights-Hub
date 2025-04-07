@@ -43,4 +43,9 @@ variable "db_password" {
   description = "Database password"
   type        = string
   sensitive   = true
+}
+
+variable "security_group_id" {
+  description = "ID of the security group to use for Elastic Beanstalk"
+  type        = string
 } 

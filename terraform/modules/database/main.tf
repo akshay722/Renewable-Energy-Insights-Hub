@@ -81,7 +81,7 @@ resource "aws_security_group" "db_security_group" {
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
-    security_groups = [module.backend.eb_security_group_id]
+    security_groups = var.allowed_security_group_ids
     description     = "MySQL access from Elastic Beanstalk"
   }
   

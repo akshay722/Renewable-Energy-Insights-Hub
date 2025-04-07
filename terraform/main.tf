@@ -22,14 +22,44 @@ provider "aws" {
   # profile = var.aws_profile
 }
 
-# Database Module
-module "database" {
-  source = "./modules/database"
+# Create security groups first
+resource "aws_security_group" "eb_security_group" {
+  name        = "${var.app_name}-eb-sg"
+  description = "Security group for Elastic Beanstalk environment"
   
-  db_name     = var.db_name
-  db_user     = var.db_user
-  db_password = var.db_password
-  region      = var.aws_region
+  # Allow HTTP traffic
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTP"
+  }
+  
+  # Allow HTTPS traffic
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTPS"
+  }
+  
+  # Allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  tags = {
+    Name = "${var.app_name}-eb-sg"
+  }
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # S3 Frontend Module
@@ -38,6 +68,17 @@ module "frontend" {
   
   bucket_name = var.frontend_bucket_name
   region      = var.aws_region
+}
+
+# Database Module
+module "database" {
+  source = "./modules/database"
+  
+  db_name                  = var.db_name
+  db_user                  = var.db_user
+  db_password              = var.db_password
+  region                   = var.aws_region
+  allowed_security_group_ids = [aws_security_group.eb_security_group.id]
 }
 
 # Elastic Beanstalk Backend Module
@@ -53,6 +94,9 @@ module "backend" {
   db_name           = var.db_name
   db_user           = var.db_user
   db_password       = var.db_password
+  security_group_id = aws_security_group.eb_security_group.id
+  
+  depends_on = [module.database]
 }
 
 # Optional: MySQL RDS Module (only if you want to manage the database with Terraform)

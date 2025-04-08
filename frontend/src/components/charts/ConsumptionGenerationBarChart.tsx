@@ -40,18 +40,18 @@ const ConsumptionGenerationBarChart: React.FC<
 }) => {
   // Create a pattern for the deficit area
   const createPattern = (): string => {
-    const patternCanvas = document.createElement('canvas');
+    const patternCanvas = document.createElement("canvas");
     patternCanvas.width = 10;
     patternCanvas.height = 10;
-    const pctx = patternCanvas.getContext('2d');
-    
+    const pctx = patternCanvas.getContext("2d");
+
     if (pctx) {
       // Fill with transparent yellow
-      pctx.fillStyle = 'rgba(255, 234, 0, 0.2)';
+      pctx.fillStyle = "rgba(255, 234, 0, 0.2)";
       pctx.fillRect(0, 0, 10, 10);
-      
+
       // Add diagonal lines for the dotted effect
-      pctx.strokeStyle = 'rgba(234, 179, 8, 0.8)';
+      pctx.strokeStyle = "rgba(234, 179, 8, 0.8)";
       pctx.lineWidth = 1;
       pctx.beginPath();
       pctx.moveTo(0, 0);
@@ -62,19 +62,19 @@ const ConsumptionGenerationBarChart: React.FC<
       pctx.lineTo(5, 10);
       pctx.stroke();
     }
-    
+
     return patternCanvas.toDataURL();
   };
-  
+
   // Create the pattern once on component render
   const patternImage = React.useMemo(() => {
-    if (typeof document !== 'undefined') {
+    if (typeof document !== "undefined") {
       return createPattern();
     }
-    return '';
+    return "";
   }, []);
   // Calculate renewable and non-renewable consumption
-  const { renewableConsumption, gridConsumption, totalGeneration, deficit, hasSurplus } =
+  const { renewableConsumption, gridConsumption, totalGeneration, deficit } =
     useMemo(() => {
       let renewableConsumption = 0;
       let gridConsumption = 0;
@@ -97,14 +97,15 @@ const ConsumptionGenerationBarChart: React.FC<
       // Calculate deficit or surplus
       const totalConsumption = renewableConsumption + gridConsumption;
       const deficit = Math.max(0, totalConsumption - totalGeneration);
-      const hasSurplus = totalGeneration > totalConsumption;
 
-      return { renewableConsumption, gridConsumption, totalGeneration, deficit, hasSurplus };
+      return {
+        renewableConsumption,
+        gridConsumption,
+        totalGeneration,
+        deficit,
+      };
     }, [consumptionBySource, generationBySource]);
 
-  // Calculate totals for consumption and generation
-  const totalConsumption = gridConsumption + renewableConsumption;
-  
   // Prepare chart data
   const chartData: ChartData<"bar"> = {
     labels: ["Energy Overview"],
@@ -134,29 +135,33 @@ const ConsumptionGenerationBarChart: React.FC<
         stack: "generation",
       },
       // Show deficit as an extension to the generation bar with pattern
-      ...(deficit > 0 ? [{
-        label: "Energy Deficit",
-        data: [deficit],
-        // Use the pattern image for the background
-        backgroundColor: (context) => {
-          const ctx = context.chart.ctx;
-          if (patternImage) {
-            const pattern = ctx.createPattern(
-              (() => {
-                const img = new Image();
-                img.src = patternImage;
-                return img;
-              })(),
-              'repeat'
-            );
-            return pattern || "rgba(255, 234, 0, 0.2)";
-          }
-          return "rgba(255, 234, 0, 0.2)";
-        },
-        borderColor: "rgba(234, 179, 8, 0.8)", // Yellow border
-        borderWidth: 2,
-        stack: "generation", // Add to generation stack to extend it
-      }] : []),
+      ...(deficit > 0
+        ? [
+            {
+              label: "Energy Deficit",
+              data: [deficit],
+              // Use the pattern image for the background
+              backgroundColor: (context: any) => {
+                const ctx = context.chart.ctx;
+                if (patternImage) {
+                  const pattern = ctx.createPattern(
+                    (() => {
+                      const img = new Image();
+                      img.src = patternImage;
+                      return img;
+                    })(),
+                    "repeat"
+                  );
+                  return pattern || "rgba(255, 234, 0, 0.2)";
+                }
+                return "rgba(255, 234, 0, 0.2)";
+              },
+              borderColor: "rgba(234, 179, 8, 0.8)", // Yellow border
+              borderWidth: 2,
+              stack: "generation", // Add to generation stack to extend it
+            },
+          ]
+        : []),
     ],
   };
 
@@ -177,12 +182,14 @@ const ConsumptionGenerationBarChart: React.FC<
           label: (context) => {
             const label = context.dataset.label || "";
             const value = context.raw as number;
-            
+
             // For deficit, add explanation text
             if (label === "Energy Deficit") {
-              return `${label}: ${value.toFixed(1)} kWh (Generation needed to match consumption)`;
+              return `${label}: ${value.toFixed(
+                1
+              )} kWh (Generation needed to match consumption)`;
             }
-            
+
             return `${label}: ${value.toFixed(1)} kWh`;
           },
         },
@@ -200,7 +207,6 @@ const ConsumptionGenerationBarChart: React.FC<
           text: "Energy (kWh)",
         },
         // This stacks bars with the same 'stack' property and separates those with different 'stack' properties
-        stacked: true,
       },
     },
   };

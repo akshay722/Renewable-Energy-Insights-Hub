@@ -11,6 +11,7 @@ import { EnergySummary, EnergySourceType, Project } from "../types";
 import { useDateRange } from "../context/DateRangeContext";
 import { useAuth } from "../context/AuthContext"; // Import auth context
 import EnergySummaryCard from "../components/EnergySummaryCard";
+import EnvironmentalImpactCard from "../components/EnvironmentalImpactCard";
 import SourceDistributionChart from "../components/charts/SourceDistributionChart";
 import ConsumptionGenerationBarChart from "../components/charts/ConsumptionGenerationBarChart";
 import Icon from "../components/icons/Icon";
@@ -141,7 +142,10 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">
+        <h1
+          className="text-2xl font-bold mb-4 md:mb-0"
+          style={{ color: "var(--color-text)" }}
+        >
           Dashboard
         </h1>
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
@@ -151,7 +155,14 @@ const Dashboard = () => {
               <select
                 value={selectedProjectId || ""}
                 onChange={handleProjectChange}
-                className="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
+                className="block w-full py-2 pl-3 pr-10 text-base rounded-md focus:outline-none focus:ring-primary"
+                style={{
+                  backgroundColor: "var(--color-input-bg)",
+                  color: "var(--color-text)",
+                  borderColor: "var(--color-input-border)",
+                  borderWidth: "1px",
+                  borderStyle: "solid",
+                }}
               >
                 <option value="">All Projects</option>
                 {projects.map((project) => (
@@ -200,45 +211,88 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Environmental Impact Card */}
+      {summary &&
+        (summary.total_generation > 0 ||
+          Object.keys(generationBySource).length > 0) && (
+          <EnvironmentalImpactCard
+            summary={summary}
+            generationBySource={generationBySource}
+            isLoading={isLoading}
+            className="mt-6"
+          />
+        )}
+
       {summary && <EnergySummaryCard summary={summary} isLoading={isLoading} />}
 
       {/* Energy Source Distribution and Consumption vs Generation Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <div className="card">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Energy Source Breakdown
+          {/* Dynamic title based on available data */}
+          <h2
+            className="text-xl font-semibold mb-4"
+            style={{ color: "var(--color-text)" }}
+          >
+            {Object.keys(consumptionBySource).length > 0
+              ? "Consumption Source Breakdown"
+              : Object.keys(generationBySource).length > 0
+              ? "Generation Source Breakdown"
+              : "Energy Source Breakdown"}
           </h2>
           {isLoading ? (
-            <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
+            <div
+              className="animate-pulse h-64 rounded"
+              style={{ backgroundColor: "var(--color-card-border)" }}
+            ></div>
           ) : Object.keys(consumptionBySource).length > 0 ? (
+            // Show consumption data if available
             <SourceDistributionChart
               data={consumptionBySource}
               chartType="doughnut"
               height={260}
-              title="Source Distribution"
+              title=""
+            />
+          ) : Object.keys(generationBySource).length > 0 ? (
+            // Show generation data if consumption isn't available
+            <SourceDistributionChart
+              data={generationBySource}
+              chartType="doughnut"
+              height={260}
+              title=""
             />
           ) : (
-            <div className="flex items-center justify-center h-64 text-gray-400">
-              No consumption data available
+            <div
+              className="flex items-center justify-center h-64"
+              style={{ color: "var(--color-text-light)" }}
+            >
+              No energy source data available
             </div>
           )}
         </div>
         <div className="card">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          <h2
+            className="text-xl font-semibold mb-4"
+            style={{ color: "var(--color-text)" }}
+          >
             Consumption & Generation
           </h2>
           {isLoading ? (
-            <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
+            <div
+              className="animate-pulse h-64 rounded"
+              style={{ backgroundColor: "var(--color-card-border)" }}
+            ></div>
           ) : summary &&
             (summary.total_consumption > 0 || summary.total_generation > 0) ? (
             <ConsumptionGenerationBarChart
               consumptionBySource={consumptionBySource}
               generationBySource={generationBySource}
               height={260}
-              title="Energy Overview"
             />
           ) : (
-            <div className="flex items-center justify-center h-64 text-gray-400">
+            <div
+              className="flex items-center justify-center h-64"
+              style={{ color: "var(--color-text-light)" }}
+            >
               No energy data available
             </div>
           )}

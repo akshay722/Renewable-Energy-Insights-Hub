@@ -70,10 +70,10 @@ const ProjectsPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>Projects</h1>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition"
         >
           Add Project
         </button>
@@ -81,45 +81,45 @@ const ProjectsPage = () => {
 
       {/* Create Project Form */}
       {showCreateForm && (
-        <div className="card bg-blue-50 border border-blue-200">
-          <h2 className="text-xl font-semibold text-blue-800 mb-4">
+        <div className="card" style={{ backgroundColor: 'var(--color-primary-light)', opacity: 0.1 }}>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--color-primary)' }}>
             Create New Project
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="form-label">
                 Project Name*
               </label>
               <input
                 type="text"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
-                className="w-full p-2 border rounded-md"
+                className="form-input"
                 placeholder="Enter project name"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="form-label">
                 Description
               </label>
               <textarea
                 value={newProjectDescription}
                 onChange={(e) => setNewProjectDescription(e.target.value)}
-                className="w-full p-2 border rounded-md"
+                className="form-input"
                 placeholder="Enter project description"
                 rows={3}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="form-label">
                 Location
               </label>
               <input
                 type="text"
                 value={newProjectLocation}
                 onChange={(e) => setNewProjectLocation(e.target.value)}
-                className="w-full p-2 border rounded-md"
+                className="form-input"
                 placeholder="Enter project location"
               />
             </div>
@@ -129,13 +129,17 @@ const ProjectsPage = () => {
                   setShowCreateForm(false);
                   resetForm();
                 }}
-                className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm"
+                className="px-3 py-1.5 rounded-md text-sm"
+                style={{ 
+                  backgroundColor: 'var(--color-background-dark)', 
+                  color: 'var(--color-text)' 
+                }}
               >
                 Cancel
               </button>
               <button
                 onClick={createProject}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm"
+                className="px-3 py-1.5 bg-primary text-white rounded-md text-sm"
                 disabled={!newProjectName.trim()}
               >
                 Create Project
@@ -147,7 +151,8 @@ const ProjectsPage = () => {
 
       {/* Error message */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded mb-6">
+        <div className="border-l-4 border-red-500 p-4 rounded mb-6" 
+             style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
           <div className="flex">
             <div className="flex-shrink-0 text-red-500">
               <svg
@@ -173,9 +178,9 @@ const ProjectsPage = () => {
       {/* Projects List */}
       {isLoading ? (
         <div className="space-y-4">
-          <div className="animate-pulse h-20 bg-gray-200 rounded"></div>
-          <div className="animate-pulse h-20 bg-gray-200 rounded"></div>
-          <div className="animate-pulse h-20 bg-gray-200 rounded"></div>
+          <div className="animate-pulse h-20 rounded" style={{ backgroundColor: 'var(--color-card-border)' }}></div>
+          <div className="animate-pulse h-20 rounded" style={{ backgroundColor: 'var(--color-card-border)' }}></div>
+          <div className="animate-pulse h-20 rounded" style={{ backgroundColor: 'var(--color-card-border)' }}></div>
         </div>
       ) : projects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -187,20 +192,20 @@ const ProjectsPage = () => {
             >
               <div className="flex flex-col h-full">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-800">
+                  <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
                     {project.name}
                   </h3>
                   {project.location && (
-                    <p className="text-sm text-gray-500 mb-2">
+                    <p className="text-sm mb-2" style={{ color: 'var(--color-text-light)' }}>
                       📍 {project.location}
                     </p>
                   )}
                   {project.description && (
-                    <p className="text-gray-600 mt-2">{project.description}</p>
+                    <p className="mt-2" style={{ color: 'var(--color-text)' }}>{project.description}</p>
                   )}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <span className="text-sm text-gray-500">
+                <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--color-card-border)' }}>
+                  <span className="text-sm" style={{ color: 'var(--color-text-light)' }}>
                     Created: {new Date(project.created_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -209,11 +214,11 @@ const ProjectsPage = () => {
           ))}
         </div>
       ) : (
-        <div className="card bg-gray-50 text-center py-10">
-          <h3 className="text-lg font-medium text-gray-500 mb-2">
+        <div className="card text-center py-10" style={{ backgroundColor: 'var(--color-background-dark)' }}>
+          <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--color-text-light)' }}>
             No projects yet
           </h3>
-          <p className="text-gray-500">
+          <p style={{ color: 'var(--color-text-light)' }}>
             Click "Add Project" to create your first project
           </p>
         </div>

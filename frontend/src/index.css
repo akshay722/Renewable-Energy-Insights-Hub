@@ -2,45 +2,98 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base theme variables */
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Light theme (default) */
+.theme-light {
+  --color-primary: #6dae19;
+  --color-primary-dark: #16a34a;
+  --color-primary-light: #6dae19b7;
+  --color-secondary: #0ea5e9;
+  --color-secondary-dark: #0284c7;
+  --color-secondary-light: #38bdf8;
+  --color-background: #f8fafc;
+  --color-background-dark: #f1f5f9;
+  --color-text: #1e293b;
+  --color-text-light: #64748b;
+  --color-card-bg: #ffffff;
+  --color-card-border: #e2e8f0;
+  --color-input-border: #cbd5e1;
+  --color-input-bg: #ffffff;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f97316;
+  --color-info: #3b82f6;
+}
+
+/* Dark theme */
+.theme-dark {
+  --color-primary: #22c55e;
+  --color-primary-dark: #16a34a;
+  --color-primary-light: #4ade80;
+  --color-secondary: #0ea5e9;
+  --color-secondary-dark: #0284c7;
+  --color-secondary-light: #38bdf8;
+  --color-background: #0f172a;
+  --color-background-dark: #1e293b;
+  --color-text: #f8fafc;
+  --color-text-light: #cbd5e1;
+  --color-card-bg: #1e293b;
+  --color-card-border: #334155;
+  --color-input-border: #475569;
+  --color-input-bg: #1e293b;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f97316;
+  --color-info: #3b82f6;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  color: var(--color-text);
+  background-color: var(--color-background);
 }
 
 @layer components {
   .btn {
     @apply px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
-  
+
   .btn-primary {
     @apply bg-primary text-white hover:bg-primary-dark focus:ring-primary;
   }
-  
+
   .btn-secondary {
     @apply bg-secondary text-white hover:bg-secondary-dark focus:ring-secondary;
   }
 
   .card {
-    @apply bg-white p-6 rounded-lg shadow-md;
+    @apply bg-white p-6 rounded-lg shadow-md border border-solid;
+    background-color: var(--color-card-bg);
+    border-color: var(--color-card-border);
+    color: var(--color-text);
   }
 
   .form-input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    border-color: var(--color-input-border);
+    background-color: var(--color-input-bg);
+    color: var(--color-text);
   }
 
   .form-label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply block text-sm font-medium mb-1;
+    color: var(--color-text);
   }
 }

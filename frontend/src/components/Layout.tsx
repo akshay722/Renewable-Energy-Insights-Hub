@@ -19,7 +19,7 @@ const Layout = () => {
                               !location.pathname.includes('/notfound');
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
       {/* Sidebar for larger screens or when open */}
       <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
       
@@ -29,7 +29,10 @@ const Layout = () => {
         
         {/* Global TimeFrameSelector */}
         {showTimeFrameSelector && (
-          <div className="border-b border-gray-200 bg-white px-4 md:px-6 py-2">
+          <div style={{ 
+            backgroundColor: 'var(--color-card-bg)', 
+            borderColor: 'var(--color-card-border)' 
+          }} className="border-b px-4 md:px-6 py-2">
             <TimeFrameSelector />
           </div>
         )}

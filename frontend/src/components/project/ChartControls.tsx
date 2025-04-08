@@ -1,6 +1,7 @@
 import React from "react";
 import { EnergySourceType } from "../../types";
 import SourceFilters from "./SourceFilters";
+import { useTheme } from "../../context/ThemeContext";
 
 type ChartView = "graph" | "pie";
 type ChartResolution = "hourly" | "daily" | "weekly";
@@ -20,46 +21,57 @@ const ChartControls: React.FC<ChartControlsProps> = ({
   setChartView,
   chartResolution,
   handleResolutionChange,
-  // Source filter props
   sourceFilters,
   toggleSourceFilter,
   resetFilters,
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  // Theme-aware styles for inactive buttons
+  const inactiveButtonStyle = {
+    backgroundColor: isDark
+      ? "var(--color-background-dark)"
+      : "var(--color-card-bg)",
+    color: "var(--color-text)",
+    borderColor: "var(--color-card-border)",
+    borderWidth: "1px",
+    borderStyle: "solid",
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center space-x-3">
           {/* Chart Type Toggle */}
-          <div className="inline-flex rounded-md shadow-sm" role="group">
+          <div className="inline-flex rounded-md align-center" role="group">
             <button
               onClick={() => setChartView("graph")}
               className={`px-4 py-2 text-sm font-medium rounded-l-md ${
-                chartView === "graph"
-                  ? "bg-primary text-white"
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                chartView === "graph" ? "bg-primary text-white" : ""
               }`}
+              style={chartView !== "graph" ? inactiveButtonStyle : {}}
             >
               Graph
             </button>
             <button
               onClick={() => setChartView("pie")}
               className={`px-4 py-2 text-sm font-medium rounded-r-md ${
-                chartView === "pie"
-                  ? "bg-primary text-white"
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                chartView === "pie" ? "bg-primary text-white" : ""
               }`}
+              style={chartView !== "pie" ? inactiveButtonStyle : {}}
             >
               Pie Chart
             </button>
+            {/* Source Filters Section */}
+            <div className="flex ml-3">
+              <SourceFilters
+                sourceFilters={sourceFilters}
+                toggleSourceFilter={toggleSourceFilter}
+                resetFilters={resetFilters}
+              />
+            </div>
           </div>
-        </div>
-        {/* Source Filters Section */}
-        <div className="mt-3">
-          <SourceFilters
-            sourceFilters={sourceFilters}
-            toggleSourceFilter={toggleSourceFilter}
-            resetFilters={resetFilters}
-          />
         </div>
 
         <div className="flex items-center space-x-3">
@@ -69,30 +81,27 @@ const ChartControls: React.FC<ChartControlsProps> = ({
               <button
                 onClick={() => handleResolutionChange("hourly")}
                 className={`px-3 py-1.5 text-xs font-medium rounded-l-md ${
-                  chartResolution === "hourly"
-                    ? "bg-primary text-white"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  chartResolution === "hourly" ? "bg-primary text-white" : ""
                 }`}
+                style={chartResolution !== "hourly" ? inactiveButtonStyle : {}}
               >
                 Hourly
               </button>
               <button
                 onClick={() => handleResolutionChange("daily")}
                 className={`px-3 py-1.5 text-xs font-medium ${
-                  chartResolution === "daily"
-                    ? "bg-primary text-white"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  chartResolution === "daily" ? "bg-primary text-white" : ""
                 }`}
+                style={chartResolution !== "daily" ? inactiveButtonStyle : {}}
               >
                 Daily
               </button>
               <button
                 onClick={() => handleResolutionChange("weekly")}
                 className={`px-3 py-1.5 text-xs font-medium rounded-r-md ${
-                  chartResolution === "weekly"
-                    ? "bg-primary text-white"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  chartResolution === "weekly" ? "bg-primary text-white" : ""
                 }`}
+                style={chartResolution !== "weekly" ? inactiveButtonStyle : {}}
               >
                 Weekly
               </button>

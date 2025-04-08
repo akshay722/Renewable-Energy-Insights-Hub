@@ -1,12 +1,16 @@
 import { useAuth } from "../context/AuthContext";
-// import { mockDataApi } from "../services/api";
+import { useTheme } from "../context/ThemeContext";
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Your Profile</h1>
+      <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+        Your Profile
+      </h1>
 
       {/* Profile information card */}
       <div className="card">
@@ -18,42 +22,53 @@ const ProfilePage = () => {
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
               Account Information
             </h2>
 
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium text-gray-500">Username</p>
-                <p className="text-base text-gray-900">{user?.username}</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--color-text-light)' }}>
+                  Username
+                </p>
+                <p className="text-base" style={{ color: 'var(--color-text)' }}>
+                  {user?.username}
+                </p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-500">Email</p>
-                <p className="text-base text-gray-900">{user?.email}</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--color-text-light)' }}>
+                  Email
+                </p>
+                <p className="text-base" style={{ color: 'var(--color-text)' }}>
+                  {user?.email}
+                </p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-500">
+                <p className="text-sm font-medium" style={{ color: 'var(--color-text-light)' }}>
                   Account Status
                 </p>
                 <div className="flex items-center">
                   <span
-                    className={`inline-block h-2.5 w-2.5 rounded-full ${
-                      user?.is_active ? "bg-green-500" : "bg-red-500"
-                    } mr-2`}
+                    className="inline-block h-2.5 w-2.5 rounded-full mr-2"
+                    style={{ 
+                      backgroundColor: user?.is_active
+                        ? isDark ? 'rgb(34, 197, 94)' : 'rgb(22, 163, 74)'
+                        : isDark ? 'rgb(239, 68, 68)' : 'rgb(220, 38, 38)'
+                    }}
                   ></span>
-                  <p className="text-base text-gray-900">
+                  <p className="text-base" style={{ color: 'var(--color-text)' }}>
                     {user?.is_active ? "Active" : "Inactive"}
                   </p>
                 </div>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-500">
+                <p className="text-sm font-medium" style={{ color: 'var(--color-text-light)' }}>
                   Account Type
                 </p>
-                <p className="text-base text-gray-900">
+                <p className="text-base" style={{ color: 'var(--color-text)' }}>
                   {user?.is_admin ? "Administrator" : "Standard User"}
                 </p>
               </div>
@@ -63,23 +78,21 @@ const ProfilePage = () => {
       </div>
 
       {/* Account actions card */}
-      <div className="card bg-gray-50">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+      <div className="card" style={{ backgroundColor: 'var(--color-background-dark)' }}>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
           Account Actions
         </h2>
 
-        <div className="space-y-4">
-          <button className="btn bg-gray-100 text-gray-700 hover:bg-gray-200 w-full sm:w-auto">
-            Change Password
-          </button>
-
-          <button
-            className="btn bg-red-100 text-red-700 hover:bg-red-200 w-full sm:w-auto"
-            onClick={logout}
-          >
-            Sign Out
-          </button>
-        </div>
+        <button
+          className="btn w-full sm:w-auto"
+          style={{ 
+            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(254, 226, 226, 0.8)',
+            color: isDark ? 'rgba(252, 165, 165, 0.9)' : 'rgba(185, 28, 28, 1)'
+          }}
+          onClick={logout}
+        >
+          Sign Out
+        </button>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import axios from "axios";
+import queryString from "query-string";
 import {
   EnergyFilter,
   EnergyConsumption,
@@ -16,6 +17,8 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   // Longer timeout for production environments
   timeout: IS_PRODUCTION ? 30000 : 10000,
+  paramsSerializer: (params) =>
+    queryString.stringify(params, { arrayFormat: "none" }),
 });
 
 // Add response interceptor for error handling

@@ -42,6 +42,10 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
         value={start}
         onChange={handleStartDateChange}
         className="border border-gray-300 rounded-md p-2"
+        style={{
+          color: "var(--color-text)",
+          backgroundColor: "var(--color-card-bg)",
+        }}
       />
       <span>to</span>
       <input
@@ -49,6 +53,10 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
         value={end}
         onChange={handleEndDateChange}
         className="border border-gray-300 rounded-md p-2"
+        style={{
+          color: "var(--color-text)",
+          backgroundColor: "var(--color-card-bg)",
+        }}
       />
     </div>
   );

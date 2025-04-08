@@ -8,6 +8,7 @@ import {
 import { jwtDecode } from "jwt-decode";
 import { AuthState, User } from "../types";
 import { authApi } from "../services/api";
+import LoadingScreen from "../components/LoadingScreen";
 
 // Initial auth state
 const initialState: AuthState = {
@@ -215,9 +216,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     dispatch({ type: "CLEAR_ERROR" });
   };
 
-  // Until we've determined the auth state, render a loading indicator
+  // Until we've determined the auth state, render our custom loading screen
   if (state.loading) {
-    return <div>Loading...</div>;
+    return <LoadingScreen message="Initializing your session..." />;
   }
 
   return (

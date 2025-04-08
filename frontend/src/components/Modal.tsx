@@ -59,20 +59,36 @@ const Modal: React.FC<ModalProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4"
+        className="fixed inset-0 z-40 flex items-center justify-center p-4"
+        style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
         onClick={onClose}
       >
         {/* Modal */}
         <div
-          className={`bg-white rounded-lg shadow-xl w-full ${maxWidthClasses[maxWidth]} z-50 overflow-hidden transform transition-all`}
+          className={`rounded-lg shadow-xl w-full ${maxWidthClasses[maxWidth]} z-50 overflow-hidden transform transition-all`}
+          style={{
+            backgroundColor: "var(--color-card-bg)",
+            color: "var(--color-text)",
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <div
+            className="px-6 py-4 flex justify-between items-center"
+            style={{
+              borderBottom: "1px solid var(--color-card-border)",
+            }}
+          >
+            <h3
+              className="text-lg font-semibold"
+              style={{ color: "var(--color-text)" }}
+            >
+              {title}
+            </h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-500 focus:outline-none"
+              className="focus:outline-none hover:opacity-80"
+              style={{ color: "var(--color-text-light)" }}
               aria-label="Close"
             >
               <Icon name="close" className="h-6 w-6" />

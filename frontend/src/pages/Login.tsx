@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import LoadingScreen from "../components/LoadingScreen";
 
 const Login = () => {
   const { login, error, clearError, isAuthenticated } = useAuth();
@@ -9,6 +10,7 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoginSuccess, setIsLoginSuccess] = useState(false);
 
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -27,20 +29,25 @@ const Login = () => {
 
     try {
       await login(username, password);
+      setIsLoginSuccess(true);
       navigate("/");
     } catch (err) {
       console.error("Login error:", err);
-    } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Show loading screen after successful login
+  if (isLoginSuccess) {
+    return <LoadingScreen message="Welcome back! Loading your dashboard..." />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
         <div className="text-center">
           <img
-            src="/solar-panel.svg"
+            src="/renewable.png"
             className="h-12 w-12 mx-auto text-primary"
             alt="Renewable Energy Insights Hub Logo"
           />

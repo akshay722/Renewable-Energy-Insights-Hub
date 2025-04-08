@@ -29,11 +29,7 @@ import ProjectAlerts from "../components/project/ProjectAlerts";
 import ChartControls from "../components/project/ChartControls";
 import AlertNotification from "../components/project/AlertNotification";
 import ProjectHeader from "../components/project/ProjectHeader";
-import {
-  getEnergyChartData,
-  getFilteredSourceData,
-  getChartTitle,
-} from "../utils/chartDataUtils";
+import { getEnergyChartData, getChartTitle } from "../utils/chartDataUtils";
 
 // Chart view types
 type ChartView = "graph" | "pie";
@@ -79,8 +75,15 @@ const ProjectDetailsPage = () => {
   const dataType: DataType = "both";
   const [chartResolution, setChartResolution] = useState<
     "hourly" | "daily" | "weekly"
-  >("daily");
-  const [sourceFilters, setSourceFilters] = useState<EnergySourceType[]>([]);
+  >("hourly");
+  const [sourceFilters, setSourceFilters] = useState<EnergySourceType[]>([
+    EnergySourceType.SOLAR,
+    EnergySourceType.WIND,
+    EnergySourceType.HYDRO,
+    EnergySourceType.GEOTHERMAL,
+    EnergySourceType.BIOMASS,
+    EnergySourceType.GRID,
+  ]);
 
   // Saved visualizations and alerts
   const [savedVisualizations, setSavedVisualizations] = useState<
@@ -102,7 +105,7 @@ const ProjectDetailsPage = () => {
   // UI state
   const [isLoading, setIsLoading] = useState(true);
   const [triggeredAlerts, setTriggeredAlerts] = useState<string[]>([]);
-  const [_, setShowTriggeredAlerts] = useState(false);
+  const [showTriggeredAlerts, setShowTriggeredAlerts] = useState(false);
 
   // Load project details
   useEffect(() => {
@@ -123,15 +126,24 @@ const ProjectDetailsPage = () => {
   // Toggle source filter
   const toggleSourceFilter = (source: EnergySourceType) => {
     if (sourceFilters.includes(source)) {
-      setSourceFilters(sourceFilters.filter((s) => s !== source));
+      const newFilters = sourceFilters.filter((s) => s !== source);
+      setSourceFilters(newFilters);
     } else {
-      setSourceFilters([...sourceFilters, source]);
+      const newFilters = [...sourceFilters, source];
+      setSourceFilters(newFilters);
     }
   };
 
   // Reset all filters
   const resetFilters = () => {
-    setSourceFilters([]);
+    setSourceFilters([
+      EnergySourceType.SOLAR,
+      EnergySourceType.WIND,
+      EnergySourceType.HYDRO,
+      EnergySourceType.GEOTHERMAL,
+      EnergySourceType.BIOMASS,
+      EnergySourceType.GRID,
+    ]);
   };
 
   // Handle chart resolution change
@@ -308,10 +320,9 @@ const ProjectDetailsPage = () => {
       const filters = {
         start_date: startDate,
         end_date: endDate,
-        source_type: sourceFilters.length > 0 ? sourceFilters : undefined,
+        source_type: sourceFilters.length > 0 ? sourceFilters : [],
         project_id: Number(projectId),
       };
-
       // Fetch all relevant data in parallel
       const [
         summaryData,
@@ -388,8 +399,7 @@ const ProjectDetailsPage = () => {
       dailyConsumptionData,
       dailyGenerationData,
       weeklyConsumptionData,
-      weeklyGenerationData,
-      sourceFilters
+      weeklyGenerationData
     );
 
     return {
@@ -403,6 +413,7 @@ const ProjectDetailsPage = () => {
       {/* Alert notification banner */}
       <AlertNotification
         triggeredAlerts={triggeredAlerts}
+        show={showTriggeredAlerts}
         onClose={() => setShowTriggeredAlerts(false)}
       />
 
@@ -426,105 +437,106 @@ const ProjectDetailsPage = () => {
         {/* Chart Area */}
         <div className="h-[400px]">
           {isLoading ? (
-            <div className="animate-pulse h-full bg-gray-200 rounded"></div>
+            <div
+              className="animate-pulse h-full rounded"
+              style={{ backgroundColor: "var(--color-card-border)" }}
+            ></div>
           ) : chartView === "graph" ? (
             // Graph View
             <EnergyChart
               consumptionData={getChartData().consumption}
               generationData={getChartData().generation}
               chartType="line"
-              height={400}
+              height={380}
               timeFrame={chartResolution}
               title={getChartTitle(chartResolution)}
             />
           ) : (
             // Pie Chart View - Separate charts for consumption and generation
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Consumption Pie Chart */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-2 text-center">
-                  Consumption by Source
-                </h3>
-                {Object.keys(
-                  getFilteredSourceData(
-                    consumptionBySource,
-                    generationBySource,
-                    sourceFilters
-                  ).consumption
-                ).length > 0 ? (
-                  <SourceDistributionChart
-                    key={`pie-consumption-${sourceFilters.join("-")}`}
-                    data={
-                      getFilteredSourceData(
-                        consumptionBySource,
-                        generationBySource,
-                        sourceFilters
-                      ).consumption
-                    }
-                    chartType="pie"
-                    height={300}
-                    title=""
-                    resolutionControls={null}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="text-center p-6">
-                      <p className="text-gray-500">
-                        No consumption data matches your filter selection
-                      </p>
-                      <button
-                        onClick={resetFilters}
-                        className="mt-3 text-sm text-blue-600 hover:text-blue-800"
-                      >
-                        Reset Filters
-                      </button>
+              <>
+                {/* Consumption Pie Chart */}
+                <div>
+                  <h3
+                    className="text-lg font-semibold mb-2 text-center"
+                    style={{ color: "var(--color-text)" }}
+                  >
+                    Consumption by Source
+                  </h3>
+                  {Object.keys(consumptionBySource).length > 0 ? (
+                    <SourceDistributionChart
+                      key={`pie-consumption-${sourceFilters.join("-")}`}
+                      data={consumptionBySource}
+                      chartType="pie"
+                      height={300}
+                      title=""
+                      resolutionControls={null}
+                    />
+                  ) : (
+                    <div
+                      className="flex items-center justify-center h-[300px] rounded-lg border"
+                      style={{
+                        backgroundColor: "var(--color-background-dark)",
+                        borderColor: "var(--color-card-border)",
+                      }}
+                    >
+                      <div className="text-center p-6">
+                        <p style={{ color: "var(--color-text-light)" }}>
+                          No consumption data matches your filter selection
+                        </p>
+                        <button
+                          onClick={resetFilters}
+                          className="mt-3 text-sm font-medium hover:opacity-80"
+                          style={{ color: "var(--color-primary)" }}
+                        >
+                          Reset Filters
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
 
-              {/* Generation Pie Chart */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-2 text-center">
-                  Generation by Source
-                </h3>
-                {Object.keys(
-                  getFilteredSourceData(
-                    consumptionBySource,
-                    generationBySource,
-                    sourceFilters
-                  ).generation
-                ).length > 0 ? (
-                  <SourceDistributionChart
-                    key={`pie-generation-${sourceFilters.join("-")}`}
-                    data={
-                      getFilteredSourceData(
-                        consumptionBySource,
-                        generationBySource,
-                        sourceFilters
-                      ).generation
-                    }
-                    chartType="pie"
-                    height={300}
-                    title=""
-                    resolutionControls={null}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="text-center p-6">
-                      <p className="text-gray-500">
-                        No generation data matches your filter selection
-                      </p>
-                      <button
-                        onClick={resetFilters}
-                        className="mt-3 text-sm text-blue-600 hover:text-blue-800"
-                      >
-                        Reset Filters
-                      </button>
+                {/* Generation Pie Chart */}
+                <div>
+                  <h3
+                    className="text-lg font-semibold mb-2 text-center"
+                    style={{ color: "var(--color-text)" }}
+                  >
+                    Generation by Source
+                  </h3>
+                  {Object.keys(generationBySource).length > 0 ? (
+                    <SourceDistributionChart
+                      key={`pie-generation-${sourceFilters.join("-")}`}
+                      data={generationBySource}
+                      chartType="pie"
+                      height={300}
+                      title=""
+                      resolutionControls={null}
+                    />
+                  ) : (
+                    <div
+                      className="flex items-center justify-center h-[300px] rounded-lg border"
+                      style={{
+                        backgroundColor: "var(--color-background-dark)",
+                        borderColor: "var(--color-card-border)",
+                      }}
+                    >
+                      <div className="text-center p-6">
+                        <p style={{ color: "var(--color-text-light)" }}>
+                          No generation data matches your filter selection
+                        </p>
+                        <button
+                          onClick={resetFilters}
+                          className="mt-3 text-sm font-medium hover:opacity-80"
+                          style={{ color: "var(--color-primary)" }}
+                        >
+                          Reset Filters
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </>
             </div>
           )}
         </div>

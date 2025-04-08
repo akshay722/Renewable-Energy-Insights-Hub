@@ -38,9 +38,13 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-30 w-64 transform shadow-lg transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        style={{
+          backgroundColor: "var(--color-card-bg)",
+          borderRight: "1px solid var(--color-card-border)",
+        }}
       >
         <div className="flex h-full flex-col overflow-y-auto">
           {/* Sidebar header */}
@@ -51,13 +55,17 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                 className="h-8 w-8 text-primary"
                 alt="Renewable Energy Insights Hub Logo"
               />
-              <span className="ml-2 text-xl font-semibold text-gray-900">
+              <span
+                className="ml-2 text-xl font-semibold"
+                style={{ color: "var(--color-text)" }}
+              >
                 Energy Insights
               </span>
             </div>
             <button
               onClick={toggleSidebar}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none md:hidden"
+              className="focus:outline-none md:hidden"
+              style={{ color: "var(--color-text-light)" }}
             >
               <Icon name="close" />
             </button>
@@ -72,11 +80,17 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                   to={item.path}
                   className={({ isActive }) =>
                     `flex items-center px-4 py-2.5 text-base font-medium transition-colors duration-200 rounded-lg ${
-                      isActive
-                        ? "bg-primary-light/10 text-primary"
-                        : "text-gray-700 hover:bg-gray-100"
+                      isActive ? "text-primary" : ""
                     }`
                   }
+                  style={({ isActive }) => ({
+                    backgroundColor: isActive
+                      ? "var(--color-primary-light)"
+                      : "transparent",
+                    color: isActive
+                      ? "var(--color-card-bg)"
+                      : "var(--color-text)",
+                  })}
                   onClick={() => {
                     if (window.innerWidth < 768) {
                       toggleSidebar();
@@ -91,16 +105,6 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
               ))}
             </div>
           </nav>
-
-          {/* Sidebar footer */}
-          <div className="mt-auto px-4 pb-6">
-            <div className="rounded-lg bg-primary-light/10 p-4">
-              <h3 className="font-medium text-primary">Need Help?</h3>
-              <p className="mt-1 text-sm text-gray-600">
-                Check out our documentation or contact support for assistance.
-              </p>
-            </div>
-          </div>
         </div>
       </aside>
     </>

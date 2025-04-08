@@ -38,8 +38,43 @@ const ConsumptionGenerationBarChart: React.FC<
   height = 300,
   title = "Energy Production & Consumption",
 }) => {
+  // Create a pattern for the deficit area
+  const createPattern = (): string => {
+    const patternCanvas = document.createElement('canvas');
+    patternCanvas.width = 10;
+    patternCanvas.height = 10;
+    const pctx = patternCanvas.getContext('2d');
+    
+    if (pctx) {
+      // Fill with transparent yellow
+      pctx.fillStyle = 'rgba(255, 234, 0, 0.2)';
+      pctx.fillRect(0, 0, 10, 10);
+      
+      // Add diagonal lines for the dotted effect
+      pctx.strokeStyle = 'rgba(234, 179, 8, 0.8)';
+      pctx.lineWidth = 1;
+      pctx.beginPath();
+      pctx.moveTo(0, 0);
+      pctx.lineTo(10, 10);
+      pctx.moveTo(5, 0);
+      pctx.lineTo(10, 5);
+      pctx.moveTo(0, 5);
+      pctx.lineTo(5, 10);
+      pctx.stroke();
+    }
+    
+    return patternCanvas.toDataURL();
+  };
+  
+  // Create the pattern once on component render
+  const patternImage = React.useMemo(() => {
+    if (typeof document !== 'undefined') {
+      return createPattern();
+    }
+    return '';
+  }, []);
   // Calculate renewable and non-renewable consumption
-  const { renewableConsumption, gridConsumption, totalGeneration } =
+  const { renewableConsumption, gridConsumption, totalGeneration, deficit, hasSurplus } =
     useMemo(() => {
       let renewableConsumption = 0;
       let gridConsumption = 0;
@@ -59,9 +94,17 @@ const ConsumptionGenerationBarChart: React.FC<
         totalGeneration += value;
       });
 
-      return { renewableConsumption, gridConsumption, totalGeneration };
+      // Calculate deficit or surplus
+      const totalConsumption = renewableConsumption + gridConsumption;
+      const deficit = Math.max(0, totalConsumption - totalGeneration);
+      const hasSurplus = totalGeneration > totalConsumption;
+
+      return { renewableConsumption, gridConsumption, totalGeneration, deficit, hasSurplus };
     }, [consumptionBySource, generationBySource]);
 
+  // Calculate totals for consumption and generation
+  const totalConsumption = gridConsumption + renewableConsumption;
+  
   // Prepare chart data
   const chartData: ChartData<"bar"> = {
     labels: ["Energy Overview"],
@@ -90,6 +133,30 @@ const ConsumptionGenerationBarChart: React.FC<
         borderWidth: 1,
         stack: "generation",
       },
+      // Show deficit as an extension to the generation bar with pattern
+      ...(deficit > 0 ? [{
+        label: "Energy Deficit",
+        data: [deficit],
+        // Use the pattern image for the background
+        backgroundColor: (context) => {
+          const ctx = context.chart.ctx;
+          if (patternImage) {
+            const pattern = ctx.createPattern(
+              (() => {
+                const img = new Image();
+                img.src = patternImage;
+                return img;
+              })(),
+              'repeat'
+            );
+            return pattern || "rgba(255, 234, 0, 0.2)";
+          }
+          return "rgba(255, 234, 0, 0.2)";
+        },
+        borderColor: "rgba(234, 179, 8, 0.8)", // Yellow border
+        borderWidth: 2,
+        stack: "generation", // Add to generation stack to extend it
+      }] : []),
     ],
   };
 
@@ -110,6 +177,12 @@ const ConsumptionGenerationBarChart: React.FC<
           label: (context) => {
             const label = context.dataset.label || "";
             const value = context.raw as number;
+            
+            // For deficit, add explanation text
+            if (label === "Energy Deficit") {
+              return `${label}: ${value.toFixed(1)} kWh (Generation needed to match consumption)`;
+            }
+            
             return `${label}: ${value.toFixed(1)} kWh`;
           },
         },
@@ -120,43 +193,21 @@ const ConsumptionGenerationBarChart: React.FC<
         stacked: true,
       },
       y: {
-        stacked: false,
+        stacked: true,
         beginAtZero: true,
         title: {
           display: true,
           text: "Energy (kWh)",
         },
+        // This stacks bars with the same 'stack' property and separates those with different 'stack' properties
+        stacked: true,
       },
     },
   };
 
   return (
     <div style={{ height }}>
-      <div className="mb-2 flex justify-between items-center">
-        {title && <h3 className="text-lg font-semibold">{title}</h3>}
-      </div>
-
       <Bar data={chartData} options={options} />
-
-      {/* Legend explanation */}
-      <div className="mt-4 text-sm text-gray-600">
-        <div className="flex flex-col space-y-1">
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-blue-500 opacity-70 rounded mr-2"></div>
-            <span>
-              Renewable Consumption: {renewableConsumption.toFixed(1)} kWh
-            </span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-slate-500 opacity-70 rounded mr-2"></div>
-            <span>Grid Consumption: {gridConsumption.toFixed(1)} kWh</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-green-500 opacity-70 rounded mr-2"></div>
-            <span>Total Generation: {totalGeneration.toFixed(1)} kWh</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

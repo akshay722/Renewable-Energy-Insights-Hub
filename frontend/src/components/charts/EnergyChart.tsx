@@ -342,7 +342,14 @@ const EnergyChart = ({
   return (
     <div style={{ height }}>
       <div className="mb-2 flex justify-between items-center text-gray-700">
-        {title && <h3 className="text-lg font-semibold">{title}</h3>}
+        {title && (
+          <h3
+            className="text-lg font-semibold"
+            style={{ color: "var(--color-text-light)" }}
+          >
+            {title}
+          </h3>
+        )}
         {resolutionControls}
       </div>
       {chartType === "line" ? (

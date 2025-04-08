@@ -13,7 +13,6 @@ export enum TimeFrame {
   LAST_30_DAYS = "last_30_days",
   LAST_90_DAYS = "last_90_days",
   LAST_YEAR = "last_year",
-  TODAY = "today",
   CUSTOM = "custom",
 }
 
@@ -31,13 +30,13 @@ const DateRangeContext = createContext<DateRangeContextType | undefined>(
 
 export const DateRangeProvider = ({ children }: { children: ReactNode }) => {
   // Set default time frame
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>(TimeFrame.LAST_30_DAYS);
+  const [timeFrame, setTimeFrame] = useState<TimeFrame>(TimeFrame.LAST_7_DAYS);
 
   // Initialize dates
   const today = new Date();
-  const thirtyDaysAgo = subDays(today, 30);
+  const thirtyDaysAgo = subDays(today, 7);
 
-  // Set default date range to last 30 days
+  // Set default date range to last 7 days
   const [startDate, setStartDate] = useState(
     format(thirtyDaysAgo, "yyyy-MM-dd")
   );
@@ -60,10 +59,6 @@ export const DateRangeProvider = ({ children }: { children: ReactNode }) => {
         break;
       case TimeFrame.LAST_YEAR:
         start = subDays(today, 365);
-        break;
-      case TimeFrame.TODAY:
-        // Set both start and end to today to show just today's data
-        start = today;
         break;
       case TimeFrame.CUSTOM:
         // Don't update dates for custom range

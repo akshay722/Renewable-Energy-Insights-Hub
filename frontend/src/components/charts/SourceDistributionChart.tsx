@@ -174,13 +174,33 @@ const SourceDistributionChart = ({
     },
   };
 
+  // Check if there's only one source
+  const isSingleSource = Object.keys(data).length === 1;
+  const singleSourceName = isSingleSource ? Object.keys(data)[0] : null;
+  const singleSourceValue = isSingleSource ? Object.values(data)[0] : null;
+
   return (
     <div style={{ height }}>
       <div className="mb-2 flex justify-between items-center">
         {title && <h3 className="text-lg font-semibold">{title}</h3>}
         {resolutionControls}
       </div>
-      {chartType === "pie" ? (
+      
+      {/* Show message when there's only one source */}
+      {isSingleSource ? (
+        <div className="flex flex-col items-center justify-center h-full">
+          <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-xl font-bold mb-4"
+               style={{ backgroundColor: sourceColors[singleSourceName!]?.background || defaultColors[0].background }}>
+            100%
+          </div>
+          <p className="text-lg font-medium text-gray-700">
+            All energy comes from <span className="font-bold">{formatSourceName(singleSourceName!)}</span>
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {singleSourceValue!.toFixed(1)} kWh
+          </p>
+        </div>
+      ) : chartType === "pie" ? (
         <Pie
           data={chartData as ChartData<"pie">}
           options={{

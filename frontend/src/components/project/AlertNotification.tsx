@@ -3,14 +3,16 @@ import Icon from "../icons/Icon";
 
 interface AlertNotificationProps {
   triggeredAlerts: string[];
+  show: boolean;
   onClose: () => void;
 }
 
 const AlertNotification: React.FC<AlertNotificationProps> = ({
   triggeredAlerts,
+  show,
   onClose,
 }) => {
-  if (triggeredAlerts.length === 0) {
+  if (!show || triggeredAlerts.length === 0) {
     return null;
   }
 

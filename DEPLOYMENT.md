@@ -1,196 +1,158 @@
-# Renewable Energy Insights Hub - AWS Free Tier Deployment Guide
+# Renewable Energy Insights Hub - AWS Deployment Guide
 
-This document outlines the steps to deploy the Renewable Energy Insights Hub application to AWS using resources eligible for the AWS Free Tier.
-
-## Free Tier Benefits
-
-This deployment is designed to stay within AWS Free Tier limits:
-
-- **EC2**: Uses t2.micro instances (750 hours/month free)
-- **RDS**: Uses db.t2.micro single-AZ (750 hours/month free)
-- **S3**: Minimal storage with lifecycle policies (5GB free)
-- **CloudFront**: Optimized caching (50GB transfer + 2M requests free)
+This guide explains how to deploy the application to AWS using GitHub Actions and Terraform, designed to stay within the AWS Free Tier limits.
 
 ## Architecture Overview
 
-The application is deployed using the following AWS services:
-
-- **Frontend**: S3 + CloudFront (Static website hosting with CDN)
-- **Backend**: Elastic Beanstalk with Single Instance (FastAPI application)
-- **Database**: Amazon RDS for MySQL (Single AZ)
-- **Infrastructure**: CloudFormation for infrastructure as code
+- **Frontend**: S3 + CloudFront (Static website hosting with HTTPS)
+- **Backend**: Elastic Beanstalk with Python (FastAPI application)
+- **Database**: RDS MySQL (Free tier db.t3.micro)
 
 ## Prerequisites
 
-Before deploying, ensure you have:
-
 1. AWS Account with Free Tier eligibility
-2. AWS CLI installed and configured
-3. GitHub or GitLab account for CI/CD
-4. Domain name (optional but recommended for production)
+2. GitHub account for CI/CD
 
-## AWS Resources Setup
+## Step 1: AWS Setup
 
-### Option 1: Using CloudFormation Template (Recommended)
+1. **Create IAM User**:
+   - Sign in to the AWS Management Console
+   - Go to IAM service
+   - Create a new user with programmatic access
+   - Attach these permissions:
+     - `AmazonS3FullAccess`
+     - `AmazonRDSFullAccess`
+     - `AWSElasticBeanstalkFullAccess`
+     - `CloudFrontFullAccess`
+   - Save the Access Key ID and Secret Access Key
 
-1. Login to your AWS account
-2. Navigate to CloudFormation
-3. Click "Create stack" > "With new resources"
-4. Upload the `cloudformation-template.yml` file
-5. Fill in the parameters:
-   - Environment: Production, Staging, or Development
-   - DBUsername: Admin username for RDS
-   - DBPassword: Secure password for RDS
-   - DomainName: Your domain name (if applicable)
-6. Create the stack and wait for completion
+2. **Create S3 Buckets**:
+   - Create a bucket for the frontend (`renewable-energy-frontend-*`)
+   - Create a bucket for Elastic Beanstalk (`renewable-energy-app-versions-*`)
 
-### Option 2: Manual Setup
+## Step 2: GitHub Setup
 
-Follow these steps if you prefer to set up resources manually:
+Add these secrets to your GitHub repository:
 
-#### 1. Database Setup (RDS)
+- `AWS_ACCESS_KEY_ID`: Your IAM user's access key
+- `AWS_SECRET_ACCESS_KEY`: Your IAM user's secret key
+- `S3_BUCKET`: Your frontend S3 bucket name
+- `EB_BUCKET`: Your Elastic Beanstalk deployment bucket
+- `DB_PASSWORD`: Database password
 
-1. Create an RDS MySQL 8.0 db.t2.micro instance (Free Tier eligible)
-2. **Important**: Disable Multi-AZ deployment to stay within Free Tier
-3. Set storage to 20GB general purpose SSD
-4. Configure security groups to allow connections from Elastic Beanstalk
+## Step 3: Terraform Deployment
 
-#### 2. Backend Setup (Elastic Beanstalk)
+1. **Initialize Terraform**:
+   ```bash
+   cd terraform
+   terraform init
+   ```
 
-1. Create a new Elastic Beanstalk application
-2. Create a SingleInstance environment (not Load Balanced) using t2.micro
-3. Configure environment properties:
-   - `DB_HOST`: RDS endpoint
-   - `DB_PORT`: RDS port (usually 3306)
-   - `DB_USER`: Database username
-   - `DB_PASSWORD`: Database password
-   - `DB_NAME`: Database name
-   - `ENVIRONMENT`: "production"
-   - `SECRET_KEY`: A secure random string
-   - `FRONTEND_URL`: CloudFront distribution URL
+2. **Create terraform.tfvars**:
+   ```
+   aws_region = "us-east-1"
+   frontend_bucket_name = "your-s3-bucket-name"
+   db_password = "your-secure-password"
+   ```
 
-#### 3. Frontend Setup (S3 + CloudFront)
+3. **Deploy Infrastructure**:
+   ```bash
+   terraform apply -var-file=terraform.tfvars
+   ```
 
-1. Create an S3 bucket for static hosting
-2. Set up lifecycle rules to delete old versions quickly
-3. Create a CloudFront distribution with PriceClass_100
-4. Configure proper caching (TTL) to minimize requests
+## Step 4: Database Initialization
 
-## Database Migration and Mock Data
+The database is set up for direct import of your data:
 
-The application comes with pre-configured database seeding to ensure your mock data is available in any environment:
+1. **Get RDS Endpoint from Terraform Output**:
+   ```bash
+   DB_ENDPOINT=$(terraform output -raw database_endpoint)
+   DB_USER=$(terraform output -raw rds_username)
+   DB_NAME=$(terraform output -raw database_name)
+   ```
 
-### Automatic Database Seeding
+2. **Import Data to RDS**:
+   ```bash
+   # Use the init-db.sql file to populate the database
+   mysql -h $DB_ENDPOINT -u $DB_USER -p $DB_NAME < init-db.sql
+   ```
 
-1. **During Deployment**: The seed script runs automatically after deployment to RDS
-2. **Seed Script Location**: `backend/seed_database.py`
-3. **Seed Data Content**:
-   - Demo users (demo/password, test/password123, admin/admin123)
-   - 30 days of mock energy consumption and generation data
-   - Data for multiple energy sources (solar, wind, grid)
+3. **Security Update After Import** (Optional):
+   After you've imported your data, you may want to secure the database by removing the public access:
+   
+   Edit the main.tf file:
+   - Change `publicly_accessible = true` to `publicly_accessible = false`
+   - Remove the temporary ingress rule that allows access from anywhere (`cidr_blocks = ["0.0.0.0/0"]`)
+   - Keep the rule that allows access from Elastic Beanstalk
+   
+   Then apply changes:
+   ```bash
+   terraform apply -var-file=terraform.tfvars
+   ```
+   
+   The Elastic Beanstalk application will still be able to connect to the database through the security group rule that allows traffic from the Elastic Beanstalk security group.
 
-### Customizing Seed Data
+## Step 5: CI/CD Deployment
 
-If you want to modify the mock data:
+The GitHub Actions workflow will automatically:
+1. Build and deploy the frontend to S3
+2. Package and deploy the backend to Elastic Beanstalk
 
-1. Edit `backend/seed_database.py` to adjust the data generation logic
-2. For using your own data dump:
-   - Create a SQL dump of your local database:
-     ```
-     mysqldump -u root -pYourPassword renewable_energy_db > your-data-dump.sql
-     ```
-   - In CloudFormation template, replace the script content in `UploadDBScriptCustomResource`
-   - Or manually import your SQL data to RDS after deployment
+This happens automatically when you push to the main branch.
 
-### Checking Seed Status
+## Security Features
 
-You can verify if the seeding was successful by:
+This deployment includes HTTPS security:
 
-1. Checking seed logs: `cat /var/log/app/seed-database.log` on the EC2 instance
-2. Connecting to the RDS database and querying the tables
-3. Using the application and verifying data appears in the UI
+1. **Frontend HTTPS** via CloudFront:
+   - CloudFront provides HTTPS with its default domain
+   - All HTTP requests redirect to HTTPS
 
-## Cost Control Measures
+2. **Backend Security**:
+   - Database temporarily accessible for import
+   - Security groups allow initial import and deployment
 
-To ensure you stay within the Free Tier limits:
+## Important Security Notes
 
-1. **Set up AWS Budgets and Billing Alarms**
+1. **Sensitive Files**:
+   - Never commit `terraform.tfvars` to Git - it contains sensitive database credentials
+   - Use the provided `terraform.tfvars.example` as a template 
+   - Store AWS credentials as GitHub Secrets, not in code
 
-   - Create a budget with $1 threshold
-   - Set up alerts at 80% of Free Tier usage
+2. **Database Security**:
+   - After initial setup, make the database private by setting `publicly_accessible = false`
+   - Remove the CIDR block rule allowing access from anywhere (0.0.0.0/0)
+   - Consider changing the default database password after deployment
 
-2. **Monitor Usage**
+3. **Security Best Practices**:
+   - Review the `.gitignore` file to ensure sensitive files are excluded
+   - Consider using AWS Secrets Manager for database credentials in a production environment
+   - Rotate AWS access keys periodically
 
-   - Regularly check the AWS Free Tier usage dashboard
-   - Watch for services approaching limits
+## Cleaning Up Resources
 
-3. **Clean up Unused Resources**
-   - Delete the CloudFormation stack when not in use
-   - Or stop the RDS instance when not actively developing
+When you're done with the assignment, clean up to avoid charges:
 
-## CI/CD Setup
-
-### GitHub Actions
-
-The repository includes GitHub Actions workflows for CI/CD:
-
-1. Add the following secrets to your GitHub repository:
-
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-   - `EB_ENVIRONMENT_URL`: Elastic Beanstalk environment URL
-   - `S3_BUCKET`: Frontend S3 bucket name
-   - `CLOUDFRONT_DISTRIBUTION_ID`: CloudFront distribution ID
-
-2. The CI/CD pipeline automatically:
-   - Runs tests on pull requests
-   - Deploys backend to Elastic Beanstalk on merges to main
-   - Builds and deploys frontend to S3 on merges to main
-   - Invalidates CloudFront cache
-
-## SSL/HTTPS Configuration
-
-HTTPS is enabled automatically:
-
-- CloudFront provides HTTPS for the frontend
-- Elastic Beanstalk is configured with HTTPS using an ACM certificate
-
-## Monitoring and Logging
-
-- Access EC2 instance logs in Elastic Beanstalk console
-- Configure CloudWatch basic monitoring (free tier eligible)
-- Avoid detailed monitoring which incurs costs
+```bash
+cd terraform
+terraform destroy -var-file=terraform.tfvars
+```
 
 ## Troubleshooting
 
-Common issues:
+1. **Frontend Not Loading**:
+   - Check CloudFront distribution status
+   - Verify S3 bucket has the correct files
 
-1. **Connection errors**: Check security groups and network ACLs
-2. **Deployment failures**: Check Elastic Beanstalk logs
-3. **Frontend not updating**: Verify CloudFront cache invalidation
-4. **Missing data**: Check seed script logs at `/var/log/app/seed-database.log`
+2. **Backend Connection Issues**:
+   - Check Elastic Beanstalk health
+   - Verify security group settings
 
-## Estimated Costs
+3. **Database Connection Errors**:
+   - Confirm RDS instance is running
+   - Check database credentials in environment variables
 
-Monthly estimated costs with Free Tier eligibility:
-
-- RDS MySQL db.t2.micro (Single AZ): $0 for first 12 months (Free Tier)
-- Elastic Beanstalk (t2.micro): $0 for first 12 months (Free Tier)
-- S3 + CloudFront: $0-1/month with modest traffic (Free Tier)
-- Total: **$0-1/month** for first 12 months with proper configuration
-
-## Cleaning Up
-
-If you want to avoid any potential charges:
-
-1. Delete the CloudFormation stack when done with the assignment
-2. Verify all resources are terminated in the AWS Console
-3. Check AWS Billing dashboard for any unexpected charges
-
-## Next Steps After Free Tier Period
-
-After the 12-month Free Tier period:
-
-- Consider Reserved Instances for continued cost savings
-- Evaluate if you need to scale up any resources
-- Implement auto-scaling for variable workloads
+4. **Database Import Issues**:
+   - Ensure MySQL client is installed on your computer
+   - Check that the init-db.sql file is correctly formatted
+   - Confirm network connectivity to the RDS instance

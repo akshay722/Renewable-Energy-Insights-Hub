@@ -1,0 +1,78 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # Build and deploy frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+          
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+          
+      - name: Deploy frontend to S3
+        run: |
+          aws s3 sync frontend/dist s3://${{ secrets.S3_BUCKET }} --delete
+          
+      - name: Invalidate CloudFront cache
+        run: |
+          # Get the distribution ID and create an invalidation
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items[0], 'renewable') || contains(Origins.Items[0].DomainName, 'renewable-energy-frontend')].Id" --output text)
+          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+
+      # Build and deploy backend
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          
+      - name: Create deployment package
+        run: |
+          cd backend
+          zip -r ../backend-deploy.zip .
+          
+      - name: Deploy to Elastic Beanstalk
+        run: |
+          # First upload the ZIP file to S3
+          aws s3 cp backend-deploy.zip s3://${{ secrets.EB_BUCKET }}/backend-deploy-${{ github.sha }}.zip
+          
+          # Then create the application version referencing that file
+          aws elasticbeanstalk create-application-version \
+            --application-name ${{ secrets.APP_NAME }} \
+            --version-label "ver-${{ github.sha }}" \
+            --source-bundle S3Bucket="${{ secrets.EB_BUCKET }}",S3Key="backend-deploy-${{ github.sha }}.zip"
+          
+          # Finally update the environment to use this version
+          aws elasticbeanstalk update-environment \
+            --environment-name ${{ secrets.ENV_NAME }} \
+            --version-label "ver-${{ github.sha }}"

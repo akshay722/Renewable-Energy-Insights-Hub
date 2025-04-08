@@ -6,12 +6,6 @@ import { EnergyFilter, EnergySummary } from "../types";
 let API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 const IS_PRODUCTION = import.meta.env.VITE_ENV === "production";
-console.log(IS_PRODUCTION, "chekcing env", API_BASE_URL);
-// Force HTTPS in production for all URLs
-if (IS_PRODUCTION && API_BASE_URL.startsWith("http:")) {
-  API_BASE_URL = API_BASE_URL.replace("http:", "https:");
-  console.log(API_BASE_URL);
-}
 
 // Create axios instance with base URL and default headers
 const api = axios.create({

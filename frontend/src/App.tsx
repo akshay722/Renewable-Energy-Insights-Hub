@@ -39,7 +39,10 @@ function App() {
           >
             <Route path="" element={<Dashboard />} />
             <Route path="projects" element={<ProjectsPage />} />
-            <Route path="projects/:projectId" element={<ProjectDetailsPage />} />
+            <Route
+              path="projects/:projectId"
+              element={<ProjectDetailsPage />}
+            />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
 

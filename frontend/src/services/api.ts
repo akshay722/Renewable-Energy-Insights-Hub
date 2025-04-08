@@ -8,9 +8,15 @@ import {
 } from "../types";
 
 // Get API URL from environment variables
-const API_BASE_URL =
+let API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 const IS_PRODUCTION = import.meta.env.VITE_ENV === "production";
+
+// Convert protocol-relative URLs to explicit HTTP
+// This prevents browsers from automatically using HTTPS with protocol-relative URLs
+if (API_BASE_URL.startsWith('//')) {
+  API_BASE_URL = 'http:' + API_BASE_URL;
+}
 
 // Create axios instance with base URL and default headers
 const api = axios.create({

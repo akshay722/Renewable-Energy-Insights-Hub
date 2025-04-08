@@ -1,0 +1,16 @@
+# AWS Configuration
+aws_region = "us-east-1"
+aws_profile = "default"
+
+# Application Configuration
+app_name = "renewable-energy-appplication"
+env_name = "production-environment"
+
+# Database Configuration
+db_name = "renewable_energy_db_sql"
+db_user = "root"
+# Note: Replace this with your secure password
+db_password = "YOUR_SECURE_PASSWORD_HERE"
+
+# Frontend Configuration
+frontend_bucket_name = "renewable-energy-frontend-us-east-1"

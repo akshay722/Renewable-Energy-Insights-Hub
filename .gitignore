@@ -40,6 +40,17 @@ wheels/
 .env.development.local
 .env.test.local
 .env.production.local
+**/.env
+**/.env.*
+
+# Secrets and keys
+**/*key.json
+**/*credentials.json
+**/*.pem
+**/*.key
+**/secrets.yaml
+**/secrets.yml
+**/secrets.json
 
 # MySQL
 *.log
@@ -69,6 +80,21 @@ wheels/
 .docker/
 docker-volumes/
 
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/.terraform.tfstate.lock.info
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+terraform/*.tfvars
+terraform/crash.log
+terraform/crash.*.log
+terraform/override.tf
+terraform/override.tf.json
+terraform/*_override.tf
+terraform/*_override.tf.json
+
 # Testing
 coverage/
 .nyc_output
@@ -80,3 +106,14 @@ coverage/
 # Misc
 .DS_Store
 Thumbs.db
+
+# Backups and temporary files
+*.bak
+*.backup
+*.swp
+*.tmp
+*.temp
+*~
+.*.swp
+*-old
+*-orig

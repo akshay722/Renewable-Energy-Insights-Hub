@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
-  default     = "us-west-2"
+  default     = "us-east-1"
 }
 
 variable "aws_profile" {
@@ -37,13 +37,7 @@ variable "instance_type" {
 variable "frontend_bucket_name" {
   description = "Name of the S3 bucket for frontend"
   type        = string
-  default     = "renewable-energy-frontend-west-2"
-}
-
-variable "db_host" {
-  description = "Database host"
-  type        = string
-  default     = "renewable-energy-db"
+  default     = "renewable-energy-frontend-us-east-1"
 }
 
 variable "db_name" {
@@ -62,4 +56,11 @@ variable "db_password" {
   description = "Database password"
   type        = string
   sensitive   = true
-} 
+}
+
+# Optional domain variable - uncomment for production
+# variable "domain_name" {
+#   description = "Domain name for the application"
+#   type        = string
+#   default     = "example.com"
+# }

@@ -72,7 +72,13 @@ jobs:
             --version-label "ver-${{ github.sha }}" \
             --source-bundle S3Bucket="${{ secrets.EB_BUCKET }}",S3Key="backend-deploy-${{ github.sha }}.zip"
           
-          # Finally update the environment to use this version
+          # Finally update the environment to use this version and set environment variables
           aws elasticbeanstalk update-environment \
             --environment-name ${{ secrets.ENV_NAME }} \
-            --version-label "ver-${{ github.sha }}"
+            --version-label "ver-${{ github.sha }}" \
+            --option-settings \
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=DB_NAME,Value=renewable_energy_db_sql \
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=DB_HOST,Value=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceIdentifier.contains(@, 'renewable')].Endpoint.Address" --output text) \
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=DB_USER,Value=root \
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=DB_PASSWORD,Value=${{ secrets.DB_PASSWORD }} \
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=ENVIRONMENT,Value=production

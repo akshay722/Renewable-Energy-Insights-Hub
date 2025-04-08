@@ -108,4 +108,6 @@ jobs:
               Namespace=aws:elasticbeanstalk:application:environment,OptionName=DB_HOST,Value=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceIdentifier.contains(@, 'renewable')].Endpoint.Address" --output text) \
               Namespace=aws:elasticbeanstalk:application:environment,OptionName=DB_USER,Value=root \
               Namespace=aws:elasticbeanstalk:application:environment,OptionName=DB_PASSWORD,Value=${{ secrets.DB_PASSWORD }} \
-              Namespace=aws:elasticbeanstalk:application:environment,OptionName=ENVIRONMENT,Value=production
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=ENVIRONMENT,Value=production \
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=FRONTEND_URL,Value=https://d2b2j5yt43rmm.cloudfront.net \
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=ALLOW_ORIGINS,Value=https://d2b2j5yt43rmm.cloudfront.net

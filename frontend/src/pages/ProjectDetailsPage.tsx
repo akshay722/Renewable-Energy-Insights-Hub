@@ -1,27 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  projectsApi,
-  insightsApi,
-  consumptionApi,
-  generationApi,
-} from "../services/api";
-import {
-  Project,
-  EnergySummary,
-  EnergySourceType,
-  DailyAggregateData,
-  EnergyConsumption,
-  EnergyGeneration,
-  WeeklyAggregateData,
-  Alert,
-  getAlertsForProject,
-  ALERTS_STORAGE_KEY,
-  SavedVisualization,
-  getVisualizationsForProject,
-  VISUALIZATIONS_STORAGE_KEY,
-} from "../types";
 import { useDateRange } from "../context/DateRangeContext";
+import { EnergySourceType } from "../types";
 import EnergyChart from "../components/charts/EnergyChart";
 import SourceDistributionChart from "../components/charts/SourceDistributionChart";
 import SavedVisualizations from "../components/project/SavedVisualizations";
@@ -31,51 +11,22 @@ import AlertNotification from "../components/project/AlertNotification";
 import ProjectHeader from "../components/project/ProjectHeader";
 import { getEnergyChartData, getChartTitle } from "../utils/chartDataUtils";
 
-// Chart view types
+import { useEnergyData } from "../hooks/useEnergyData";
+import { useAlerts } from "../hooks/useAlerts";
+import { useVisualizations } from "../hooks/useVisualizations";
+
 type ChartView = "graph" | "pie";
 type DataType = "consumption" | "generation" | "both";
+type ChartResolution = "hourly" | "daily" | "weekly";
 
 const ProjectDetailsPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { startDate, endDate, setDateRange } = useDateRange();
 
-  // Project data state
-  const [project, setProject] = useState<Project | null>(null);
-  const [summary, setSummary] = useState<EnergySummary | null>(null);
-
-  // Energy data state
-  const [consumptionData, setConsumptionData] = useState<EnergyConsumption[]>(
-    []
-  );
-  const [generationData, setGenerationData] = useState<EnergyGeneration[]>([]);
-  const [dailyConsumptionData, setDailyConsumptionData] = useState<
-    DailyAggregateData[]
-  >([]);
-  const [dailyGenerationData, setDailyGenerationData] = useState<
-    DailyAggregateData[]
-  >([]);
-  const [weeklyConsumptionData, setWeeklyConsumptionData] = useState<
-    WeeklyAggregateData[]
-  >([]);
-  const [weeklyGenerationData, setWeeklyGenerationData] = useState<
-    WeeklyAggregateData[]
-  >([]);
-  const [consumptionBySource, setConsumptionBySource] = useState<
-    Record<string, number>
-  >({});
-  const [generationBySource, setGenerationBySource] = useState<
-    Record<string, number>
-  >({});
-  const [totalConsumption, setTotalConsumption] = useState(0);
-  const [totalGeneration, setTotalGeneration] = useState(0);
-
-  // Chart configuration state
   const [chartView, setChartView] = useState<ChartView>("graph");
-  // dataType is now always "both"
-  const dataType: DataType = "both";
-  const [chartResolution, setChartResolution] = useState<
-    "hourly" | "daily" | "weekly"
-  >("hourly");
+  const dataType: DataType = "both"; // Always both in this implementation
+  const [chartResolution, setChartResolution] =
+    useState<ChartResolution>("hourly");
   const [sourceFilters, setSourceFilters] = useState<EnergySourceType[]>([
     EnergySourceType.SOLAR,
     EnergySourceType.WIND,
@@ -85,56 +36,78 @@ const ProjectDetailsPage = () => {
     EnergySourceType.GRID,
   ]);
 
-  // Saved visualizations and alerts
-  const [savedVisualizations, setSavedVisualizations] = useState<
-    SavedVisualization[]
-  >(() => {
-    const saved = localStorage.getItem(VISUALIZATIONS_STORAGE_KEY);
-    const allVisualizations = saved ? JSON.parse(saved) : [];
-    return projectId
-      ? getVisualizationsForProject(allVisualizations, Number(projectId))
-      : [];
+  // Load energy data with custom hook
+  const {
+    project,
+    consumptionData,
+    generationData,
+    dailyConsumptionData,
+    dailyGenerationData,
+    weeklyConsumptionData,
+    weeklyGenerationData,
+    consumptionBySource,
+    generationBySource,
+    totalConsumption,
+    totalGeneration,
+    isLoading,
+  } = useEnergyData({
+    projectId,
+    startDate,
+    endDate,
+    sourceFilters,
   });
 
-  const [alerts, setAlerts] = useState<Alert[]>(() => {
-    const saved = localStorage.getItem(ALERTS_STORAGE_KEY);
-    const allAlerts = saved ? JSON.parse(saved) : [];
-    return projectId ? getAlertsForProject(allAlerts, Number(projectId)) : [];
+  // Handle alerts with custom hook
+  const {
+    alerts,
+    triggeredAlerts,
+    showTriggeredAlerts,
+    setShowTriggeredAlerts,
+    saveAlert,
+    toggleAlertStatus,
+    deleteAlert,
+  } = useAlerts({
+    projectId,
+    totalConsumption,
+    totalGeneration,
   });
 
-  // UI state
-  const [isLoading, setIsLoading] = useState(true);
-  const [triggeredAlerts, setTriggeredAlerts] = useState<string[]>([]);
-  const [showTriggeredAlerts, setShowTriggeredAlerts] = useState(false);
-
-  // Load project details
-  useEffect(() => {
-    const fetchProjectDetails = async () => {
-      if (!projectId) return;
-
-      try {
-        const projectData = await projectsApi.getById(Number(projectId));
-        setProject(projectData);
-      } catch (error) {
-        console.error("Error loading project details:", error);
+  // Handle visualizations with custom hook
+  const {
+    savedVisualizations,
+    saveVisualization,
+    loadVisualization,
+    deleteVisualization,
+  } = useVisualizations(
+    { projectId },
+    {
+      chartView,
+      sourceFilters,
+      chartResolution,
+      startDate,
+      endDate,
+      dataType,
+    },
+    (settings) => {
+      if (settings.chartView) setChartView(settings.chartView);
+      if (settings.sourceFilters) setSourceFilters(settings.sourceFilters);
+      if (settings.chartResolution)
+        setChartResolution(settings.chartResolution);
+      if (settings.startDate && settings.endDate) {
+        setDateRange(settings.startDate, settings.endDate);
       }
-    };
+    }
+  );
 
-    fetchProjectDetails();
-  }, [projectId]);
-
-  // Toggle source filter
+  // Filter functions
   const toggleSourceFilter = (source: EnergySourceType) => {
     if (sourceFilters.includes(source)) {
-      const newFilters = sourceFilters.filter((s) => s !== source);
-      setSourceFilters(newFilters);
+      setSourceFilters(sourceFilters.filter((s) => s !== source));
     } else {
-      const newFilters = [...sourceFilters, source];
-      setSourceFilters(newFilters);
+      setSourceFilters([...sourceFilters, source]);
     }
   };
 
-  // Reset all filters
   const resetFilters = () => {
     setSourceFilters([
       EnergySourceType.SOLAR,
@@ -146,254 +119,10 @@ const ProjectDetailsPage = () => {
     ]);
   };
 
-  // Handle chart resolution change
-  const handleResolutionChange = (
-    resolution: "hourly" | "daily" | "weekly"
-  ) => {
-    setChartResolution(resolution);
-  };
-
-  // Load saved visualization
-  const loadVisualization = (visualization: SavedVisualization) => {
-    setDateRange(visualization.startDate, visualization.endDate);
-    setChartView(visualization.chartView);
-    setSourceFilters(visualization.sourceFilters);
-    setChartResolution(visualization.timeFrame);
-  };
-
-  // Delete saved visualization
-  const deleteVisualization = (id: string) => {
-    // Update local state
-    const updatedVisualizations = savedVisualizations.filter(
-      (v) => v.id !== id
-    );
-    setSavedVisualizations(updatedVisualizations);
-
-    // Update localStorage
-    const saved = localStorage.getItem(VISUALIZATIONS_STORAGE_KEY);
-    if (saved) {
-      const allVisualizations = JSON.parse(saved);
-      const filteredVisualizations = allVisualizations.filter(
-        (v: SavedVisualization) => v.id !== id
-      );
-      localStorage.setItem(
-        VISUALIZATIONS_STORAGE_KEY,
-        JSON.stringify(filteredVisualizations)
-      );
-    }
-  };
-
-  // Save current visualization
-  const saveVisualization = (name: string, isGlobal: boolean) => {
-    const newVisualization: SavedVisualization = {
-      id: Date.now().toString(),
-      name,
-      chartView,
-      dataType,
-      sourceFilters,
-      timeFrame: chartResolution,
-      startDate,
-      endDate,
-      global: isGlobal,
-      project_id: Number(projectId),
-    };
-
-    // Update local state
-    setSavedVisualizations([...savedVisualizations, newVisualization]);
-
-    // Update localStorage
-    const saved = localStorage.getItem(VISUALIZATIONS_STORAGE_KEY);
-    const allVisualizations = saved ? JSON.parse(saved) : [];
-    allVisualizations.push(newVisualization);
-    localStorage.setItem(
-      VISUALIZATIONS_STORAGE_KEY,
-      JSON.stringify(allVisualizations)
-    );
-  };
-
-  // Save new alert
-  const saveAlert = (
-    name: string,
-    type: "consumption" | "generation",
-    threshold: number,
-    condition: "above" | "below",
-    isGlobal: boolean
-  ) => {
-    const newAlert: Alert = {
-      id: Date.now().toString(),
-      name,
-      type,
-      threshold,
-      condition,
-      active: true,
-      global: isGlobal,
-      project_id: Number(projectId),
-    };
-
-    // Update local state
-    setAlerts([...alerts, newAlert]);
-
-    // Update localStorage
-    const saved = localStorage.getItem(ALERTS_STORAGE_KEY);
-    const allAlerts = saved ? JSON.parse(saved) : [];
-    allAlerts.push(newAlert);
-    localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(allAlerts));
-  };
-
-  // Toggle alert active status
-  const toggleAlertStatus = (id: string) => {
-    // Update local state
-    const updatedAlerts = alerts.map((alert) =>
-      alert.id === id ? { ...alert, active: !alert.active } : alert
-    );
-    setAlerts(updatedAlerts);
-
-    // Update localStorage
-    const saved = localStorage.getItem(ALERTS_STORAGE_KEY);
-    if (saved) {
-      const allAlerts = JSON.parse(saved);
-      const updatedAllAlerts = allAlerts.map((alert: Alert) =>
-        alert.id === id ? { ...alert, active: !alert.active } : alert
-      );
-      localStorage.setItem(
-        ALERTS_STORAGE_KEY,
-        JSON.stringify(updatedAllAlerts)
-      );
-    }
-  };
-
-  // Delete alert
-  const deleteAlert = (id: string) => {
-    // Update local state
-    const updatedAlerts = alerts.filter((a) => a.id !== id);
-    setAlerts(updatedAlerts);
-
-    // Update localStorage
-    const saved = localStorage.getItem(ALERTS_STORAGE_KEY);
-    if (saved) {
-      const allAlerts = JSON.parse(saved);
-      const filteredAlerts = allAlerts.filter((a: Alert) => a.id !== id);
-      localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(filteredAlerts));
-    }
-  };
-
-  // Check alerts against current data
-  useEffect(() => {
-    // Only check enabled alerts
-    const activeAlerts = alerts.filter((alert) => alert.active);
-    if (activeAlerts.length === 0) return;
-
-    const triggered: string[] = [];
-
-    activeAlerts.forEach((alert) => {
-      const value =
-        alert.type === "consumption" ? totalConsumption : totalGeneration;
-      const triggerCondition =
-        (alert.condition === "above" && value > alert.threshold) ||
-        (alert.condition === "below" && value < alert.threshold);
-
-      if (triggerCondition) {
-        triggered.push(
-          `${alert.name}: ${alert.type} is ${
-            alert.condition === "above" ? "above" : "below"
-          } threshold of ${alert.threshold} kWh (Current: ${value.toFixed(
-            1
-          )} kWh)`
-        );
-      }
-    });
-
-    if (triggered.length > 0) {
-      setTriggeredAlerts(triggered);
-      setShowTriggeredAlerts(true);
-    }
-  }, [alerts, totalConsumption, totalGeneration]);
-
-  // Load energy data
-  const loadEnergyData = async () => {
-    if (!projectId) return;
-    console.log(summary);
-
-    setIsLoading(true);
-    try {
-      // Prepare filter params
-      const filters = {
-        start_date: startDate,
-        end_date: endDate,
-        source_type: sourceFilters.length > 0 ? sourceFilters : [],
-        project_id: Number(projectId),
-      };
-      // Fetch all relevant data in parallel
-      const [
-        summaryData,
-        consumptionResponse,
-        generationResponse,
-        dailyConsumptionResponse,
-        dailyGenerationResponse,
-        weeklyConsumptionResponse,
-        weeklyGenerationResponse,
-      ] = await Promise.all([
-        insightsApi.getSummary(startDate, endDate, Number(projectId)),
-        consumptionApi.getAll(filters),
-        generationApi.getAll(filters),
-        consumptionApi.getDailyAggregate(filters),
-        generationApi.getDailyAggregate(filters),
-        consumptionApi.getWeeklyAggregate(filters),
-        generationApi.getWeeklyAggregate(filters),
-      ]);
-
-      // Set summary data
-      setSummary(summaryData);
-      setTotalConsumption(summaryData?.total_consumption || 0);
-      setTotalGeneration(summaryData?.total_generation || 0);
-
-      // Set hourly data
-      setConsumptionData(consumptionResponse || []);
-      setGenerationData(generationResponse || []);
-
-      // Set source distribution data
-      if (dailyConsumptionResponse) {
-        setConsumptionBySource(dailyConsumptionResponse.by_source || {});
-        setDailyConsumptionData(
-          dailyConsumptionResponse.daily_consumption || []
-        );
-      }
-
-      if (dailyGenerationResponse) {
-        setGenerationBySource(dailyGenerationResponse.by_source || {});
-        setDailyGenerationData(dailyGenerationResponse.daily_generation || []);
-      }
-
-      // Set weekly data
-      if (weeklyConsumptionResponse) {
-        setWeeklyConsumptionData(
-          weeklyConsumptionResponse.weekly_consumption || []
-        );
-      }
-
-      if (weeklyGenerationResponse) {
-        setWeeklyGenerationData(
-          weeklyGenerationResponse.weekly_generation || []
-        );
-      }
-    } catch (error) {
-      console.error("Error loading energy data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Load data when filters change
-  useEffect(() => {
-    loadEnergyData();
-  }, [projectId, startDate, endDate, sourceFilters]);
-
   // Get chart data based on current settings
   const getChartData = () => {
     const energyChartData = getEnergyChartData(
       chartResolution,
-      startDate,
-      endDate,
       consumptionData,
       generationData,
       dailyConsumptionData,
@@ -427,7 +156,7 @@ const ProjectDetailsPage = () => {
             chartView={chartView}
             setChartView={setChartView}
             chartResolution={chartResolution}
-            handleResolutionChange={handleResolutionChange}
+            handleResolutionChange={setChartResolution}
             sourceFilters={sourceFilters}
             toggleSourceFilter={toggleSourceFilter}
             resetFilters={resetFilters}
@@ -461,7 +190,7 @@ const ProjectDetailsPage = () => {
                     className="text-lg font-semibold mb-2 text-center"
                     style={{ color: "var(--color-text)" }}
                   >
-                    Consumption by Source
+                    Consumption by Sourcess
                   </h3>
                   {Object.keys(consumptionBySource).length > 0 ? (
                     <SourceDistributionChart

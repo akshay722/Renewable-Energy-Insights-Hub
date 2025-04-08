@@ -4,9 +4,11 @@ FROM node:18
 # Set working directory inside the container
 WORKDIR /app
 
-# Copy package.json and install dependencies
-COPY package.json package-lock.json ./
-RUN npm install
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies with clean cache
+RUN npm clean-install --force
 
 # Copy all frontend files
 COPY . .

@@ -32,7 +32,7 @@ pip install -r requirements.txt
 3. Create a `.env` file in the root directory with the following content:
 
 ```
-DATABASE_URL=mysql+pymysql://root:password@localhost:3306/renewable_energy_db
+DATABASE_URL=mysql+pymysql://root:password@localhost:3306/renewable_energy_db_sql
 SECRET_KEY=your_secret_key_here
 ```
 
@@ -43,7 +43,7 @@ mysql -u root -p
 ```
 
 ```sql
-CREATE DATABASE renewable_energy_db;
+CREATE DATABASE renewable_energy_db_sql;
 exit;
 ```
 
@@ -54,7 +54,7 @@ The backend can be run in Docker, connecting to your host machine's MySQL databa
 1. Ensure your local MySQL database is running and accessible
 2. The database connection in Docker uses `host.docker.internal` to connect to your host machine's MySQL:
    ```
-   DATABASE_URL=mysql+pymysql://root:Qywter@123@host.docker.internal:3306/renewable_energy_db
+   DATABASE_URL=mysql+pymysql://root:Qywter@123@host.docker.internal:3306/renewable_energy_db_sql
    ```
 3. Run the Docker container from the project root:
    ```bash
@@ -117,12 +117,12 @@ The application starts automatically when the Docker container runs. The API wil
   - Is running and accessible
   - Allows connections from Docker (check bind-address in MySQL config)
   - Has the correct username/password as specified in the connection string
-  - Has the renewable_energy_db database created
+  - Has the renewable_energy_db_sql database created
 
 - You can test the connection from inside the container:
   ```bash
   docker compose exec backend bash
-  python -c "import pymysql; pymysql.connect(host='host.docker.internal', user='root', password='Qywter@123', database='renewable_energy_db')"
+  python -c "import pymysql; pymysql.connect(host='host.docker.internal', user='root', password='Qywter@123', database='renewable_energy_db_sql')"
   ```
   If no error appears, the connection is successful.
 

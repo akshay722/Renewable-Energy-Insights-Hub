@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: Qywter@123
-      MYSQL_DATABASE: renewable_energy_db
+      MYSQL_DATABASE: renewable_energy_db_sql
     ports:
       - "3307:3306"
     volumes:
@@ -37,7 +37,7 @@ services:
       - "8000:8000"
     environment:
       # Connect to the host machine's database
-      - DATABASE_URL=mysql+pymysql://root:Qywter%40123@db:3306/renewable_energy_db
+      - DATABASE_URL=mysql+pymysql://root:Qywter%40123@db:3306/renewable_energy_db_sql
       - SEED_DATABASE=false # No need to run the seed script since we're using the SQL dump
     volumes:
       - ./backend:/app

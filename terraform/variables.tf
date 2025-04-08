@@ -43,7 +43,7 @@ variable "frontend_bucket_name" {
 variable "db_name" {
   description = "Database name"
   type        = string
-  default     = "renewable_energy_db"
+  default     = "renewable_energy_db_sql"
 }
 
 variable "db_user" {

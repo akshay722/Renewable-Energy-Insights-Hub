@@ -1,17 +1,11 @@
 #!/bin/bash
 
-# Set Python path to include current directory
-export PYTHONPATH=$PYTHONPATH:$(pwd)
+echo "Waiting for MySQL to be ready via Python..."
 
-# Start the FastAPI application
-echo "Starting FastAPI application..."
-echo "Connecting to database..."
+# Run Python script to wait until DB is reachable
+python3 /app/wait_for_db.py
 
-# Run the seed database script if it exists and flag is set
-if [ -f "seed_database.py" ] && [ "$SEED_DATABASE" = "true" ]; then
-  echo "Seeding database with mock data..."
-  python seed_database.py || echo "Warning: Database seeding failed, but continuing with application startup"
-fi
-
-# Start the application
-exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+# If successful, start the FastAPI server
+echo "MySQL is ready. Launching FastAPI...
+"
+uvicorn main:app --host 0.0.0.0 --port 8000

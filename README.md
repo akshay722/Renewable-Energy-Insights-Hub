@@ -60,8 +60,8 @@ If you prefer to run components separately for development:
 2. Create a database and initialize it:
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE renewable_energy_db;"
-mysql -u root -p renewable_energy_db < init-db.sql
+mysql -u root -p -e "CREATE DATABASE renewable_energy_db_sql;"
+mysql -u root -p renewable_energy_db_sql < init-db.sql
 ```
 
 ### Backend Setup
@@ -77,7 +77,7 @@ echo "DB_USER=root
 DB_PASSWORD=your_password
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=renewable_energy_db" > .env
+DB_NAME=renewable_energy_db_sql" > .env
 
 # Start the backend server
 python -m uvicorn main:app --reload

@@ -42,7 +42,7 @@ class EnergyGeneration(BaseModel):
     timestamp = Column(DateTime, nullable=False, index=True)
     value_kwh = Column(Float, nullable=False)
     source_type = Column(Enum(EnergySourceType), nullable=False)
-    efficiency = Column(Float, nullable=True)  # Efficiency percentage
+    efficiency = Column(Float, nullable=True) 
     
     # Relationships
     project = relationship("Project", back_populates="generation_data")

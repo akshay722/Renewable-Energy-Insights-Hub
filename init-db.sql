@@ -2,8 +2,8 @@
 
 
 -- Create the database if it doesn't exist and switch to it
-CREATE DATABASE IF NOT EXISTS renewable_energy_db;
-USE renewable_energy_db;
+CREATE DATABASE IF NOT EXISTS renewable_energy_db_sql;
+USE renewable_energy_db_sql;
 
 -- Create the users table
 CREATE TABLE IF NOT EXISTS users (

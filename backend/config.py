@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "Qywter@123")
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: str = os.getenv("DB_PORT", "3306")
-    DB_NAME: str = os.getenv("DB_NAME", "renewable_energy_db")
+    DB_NAME: str = os.getenv("DB_NAME", "renewable_energy_db_sql")
     
     # Construct DATABASE_URL from components or use provided URL
     @property

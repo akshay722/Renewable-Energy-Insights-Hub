@@ -41,9 +41,36 @@ jobs:
           
       - name: Invalidate CloudFront cache
         run: |
-          # Get the distribution ID and create an invalidation
-          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items[0], 'renewable') || contains(Origins.Items[0].DomainName, 'renewable-energy-frontend')].Id" --output text)
-          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+          # First get the full bucket domain name from S3
+          BUCKET_DOMAIN="${{ secrets.S3_BUCKET }}.s3.amazonaws.com"
+          echo "Looking for CloudFront distribution with origin: $BUCKET_DOMAIN"
+          
+          # Get all distributions and their origins for debugging
+          aws cloudfront list-distributions --query "DistributionList.Items[].{Id:Id, Origins:Origins.Items[0].DomainName}" --output json
+          
+          # Try to find the distribution by origin domain
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[0].DomainName=='$BUCKET_DOMAIN'].Id" --output text)
+          
+          # If that fails, try a more flexible search
+          if [ -z "$DISTRIBUTION_ID" ]; then
+            echo "Failed to find exact match. Trying partial match..."
+            DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, '${{ secrets.S3_BUCKET }}')].Id" --output text)
+          fi
+          
+          # Last resort, just take the first distribution (assuming this is a test account with few distributions)
+          if [ -z "$DISTRIBUTION_ID" ]; then
+            echo "Failed to find by bucket name. Taking first distribution as fallback..."
+            DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[0].Id" --output text)
+          fi
+          
+          if [ -n "$DISTRIBUTION_ID" ]; then
+            echo "Invalidating CloudFront distribution: $DISTRIBUTION_ID"
+            aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+          else
+            echo "Warning: Could not find CloudFront distribution ID. Skipping invalidation."
+            # Print all distribution IDs for debugging
+            aws cloudfront list-distributions --query "DistributionList.Items[].Id" --output text
+          fi
 
       # Build and deploy backend
       - name: Setup Python

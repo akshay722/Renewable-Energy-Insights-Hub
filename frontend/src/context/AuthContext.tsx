@@ -158,11 +158,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const data = await authApi.login(username, password);
 
-      // Get token and user details from the response
       const token = data.access_token;
       localStorage.setItem("token", token);
 
-      // Create user object from the response data
       const user: User = {
         id: data.user_id || 1,
         username: data.username || username,

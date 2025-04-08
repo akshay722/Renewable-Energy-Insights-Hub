@@ -77,18 +77,15 @@ const SourceDistributionChart = ({
   showGreenVsNonGreen = false,
   resolutionControls,
 }: SourceDistributionChartProps) => {
-  // Format source names for display
   const formatSourceName = (name: string): string => {
     return name.charAt(0).toUpperCase() + name.slice(1);
   };
 
   // Prepare chart data
   const chartData = useMemo<ChartData<"pie" | "doughnut">>(() => {
-    // If showing green vs non-green, transform the data
     if (showGreenVsNonGreen) {
       const nonGreenSources = ["grid"];
 
-      // Calculate totals
       let greenTotal = 0;
       let nonGreenTotal = 0;
 
@@ -119,11 +116,9 @@ const SourceDistributionChart = ({
       };
     }
 
-    // Normal source distribution chart
     const labels = Object.keys(data).map(formatSourceName);
     const values = Object.values(data);
 
-    // Get colors for each source
     const backgroundColors = Object.keys(data).map(
       (source) =>
         sourceColors[source]?.background || defaultColors[0].background
@@ -174,7 +169,6 @@ const SourceDistributionChart = ({
     },
   };
 
-  // Check if there's only one source
   const isSingleSource = Object.keys(data).length === 1;
   const singleSourceName = isSingleSource ? Object.keys(data)[0] : null;
   const singleSourceValue = isSingleSource ? Object.values(data)[0] : null;
@@ -185,16 +179,25 @@ const SourceDistributionChart = ({
         {title && <h3 className="text-lg font-semibold">{title}</h3>}
         {resolutionControls}
       </div>
-      
+
       {/* Show message when there's only one source */}
       {isSingleSource ? (
         <div className="flex flex-col items-center justify-center h-full">
-          <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-xl font-bold mb-4"
-               style={{ backgroundColor: sourceColors[singleSourceName!]?.background || defaultColors[0].background }}>
+          <div
+            className="w-24 h-24 rounded-full flex items-center justify-center text-white text-xl font-bold mb-4"
+            style={{
+              backgroundColor:
+                sourceColors[singleSourceName!]?.background ||
+                defaultColors[0].background,
+            }}
+          >
             100%
           </div>
           <p className="text-lg font-medium text-gray-700">
-            All energy comes from <span className="font-bold">{formatSourceName(singleSourceName!)}</span>
+            All energy comes from{" "}
+            <span className="font-bold">
+              {formatSourceName(singleSourceName!)}
+            </span>
           </p>
           <p className="text-sm text-gray-500 mt-1">
             {singleSourceValue!.toFixed(1)} kWh

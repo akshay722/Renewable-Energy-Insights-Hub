@@ -6,7 +6,6 @@ import {
   ReactNode,
 } from "react";
 
-// Theme types
 export type ThemeType = "light" | "dark";
 
 interface ThemeContextType {
@@ -15,12 +14,10 @@ interface ThemeContextType {
   toggleTheme: () => void;
 }
 
-// Create context
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 // Theme provider component
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  // Get saved theme from localStorage or default to 'light'
   const [theme, setThemeState] = useState<ThemeType>(() => {
     const savedTheme = localStorage.getItem("theme");
     return (savedTheme as ThemeType) || "dark";
@@ -28,22 +25,15 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   // Update theme class on the document element
   useEffect(() => {
-    // Remove any existing theme classes
     document.documentElement.classList.remove("theme-light", "theme-dark");
-
-    // Add the current theme class
     document.documentElement.classList.add(`theme-${theme}`);
-
-    // Save to localStorage
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  // Set theme function
   const setTheme = (newTheme: ThemeType) => {
     setThemeState(newTheme);
   };
 
-  // Toggle between light and dark themes
   const toggleTheme = () => {
     setThemeState((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
   };

@@ -36,7 +36,6 @@ export enum EnergySourceType {
   GRID = "grid",
 }
 
-// Helper to determine if a source is renewable
 export const isRenewableSource = (source: EnergySourceType): boolean => {
   return source !== EnergySourceType.GRID;
 };
@@ -130,8 +129,8 @@ export interface Alert {
   threshold: number;
   condition: "above" | "below";
   active: boolean;
-  project_id: number | null; // null means global alert
-  global: boolean; // true for global alerts across all projects
+  project_id: number | null;
+  global: boolean;
 }
 
 // Visualization types
@@ -144,8 +143,8 @@ export interface SavedVisualization {
   dataType: "consumption" | "generation" | "both";
   sourceFilters: EnergySourceType[];
   timeFrame: "hourly" | "daily" | "weekly";
-  project_id: number | null; // null means global visualization
-  global: boolean; // true for global visualizations across all projects
+  project_id: number | null;
+  global: boolean;
 }
 
 // Helper functions for alert management

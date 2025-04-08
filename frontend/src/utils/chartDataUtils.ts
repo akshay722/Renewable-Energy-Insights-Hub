@@ -1,4 +1,3 @@
-import { parseISO } from "date-fns";
 import {
   EnergyConsumption,
   EnergyGeneration,
@@ -11,8 +10,6 @@ import {
  */
 export const getEnergyChartData = (
   chartResolution: "hourly" | "daily" | "weekly",
-  startDate: string,
-  endDate: string,
   consumptionData: EnergyConsumption[],
   generationData: EnergyGeneration[],
   dailyConsumptionData: DailyAggregateData[],
@@ -20,38 +17,33 @@ export const getEnergyChartData = (
   weeklyConsumptionData: WeeklyAggregateData[],
   weeklyGenerationData: WeeklyAggregateData[]
 ) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
   let consumption: any[] = [];
   let generation: any[] = [];
 
   if (chartResolution === "hourly") {
-    // Use hourly data and filter by the selected date range
-    consumption = consumptionData
-      .filter((item) => {
-        const itemDate = parseISO(item.timestamp);
-        return itemDate >= start && itemDate <= end;
-      })
-      .sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
+    consumption = [...consumptionData].sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
 
-    generation = generationData
-      .filter((item) => {
-        const itemDate = parseISO(item.timestamp);
-        return itemDate >= start && itemDate <= end;
-      })
-      .sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
+    generation = [...generationData].sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
   } else if (chartResolution === "daily") {
-    consumption = [...dailyConsumptionData];
-    generation = [...dailyGenerationData];
+    consumption = [...dailyConsumptionData].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    generation = [...dailyGenerationData].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
   } else if (chartResolution === "weekly") {
-    consumption = [...weeklyConsumptionData];
-    generation = [...weeklyGenerationData];
+    consumption = [...weeklyConsumptionData].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    generation = [...weeklyGenerationData].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
   }
 
   return { consumption, generation };

@@ -109,7 +109,7 @@ const EnergyChart = ({
   const getDateField = (item: any): string => {
     if (item.timestamp) return item.timestamp;
     if (item.date) return item.date;
-    if (item.week_start) return item.week_start; // Added to support weekly aggregated data
+    if (item.week_start) return item.week_start;
     return "";
   };
 
@@ -120,7 +120,6 @@ const EnergyChart = ({
 
   // Prepare chart data
   const chartData = useMemo(() => {
-    // Get all unique dates from both datasets\
     const allDates = new Set<string>(
       [
         ...consumptionData.map((item) => getDateField(item)),
@@ -128,16 +127,13 @@ const EnergyChart = ({
       ].sort()
     );
 
-    // For hourly timeframe, format data differently
     let labels = Array.from(allDates);
 
     if (timeFrame === "hourly") {
-      // Sort chronologically for hourly data
       labels = labels.sort(
         (a, b) => new Date(a).getTime() - new Date(b).getTime()
       );
 
-      // Use short hour format for hourly labels
       labels = labels.map(formatHour);
     } else {
       labels = labels.map(formatDate);
@@ -166,7 +162,7 @@ const EnergyChart = ({
           backgroundColor: "rgba(239, 68, 68, 0.5)",
           borderColor: "rgb(239, 68, 68)",
           borderWidth: 1,
-          order: 2, // Higher order renders below
+          order: 2,
           yAxisID: "y",
         });
       }
@@ -190,16 +186,15 @@ const EnergyChart = ({
           borderColor: "rgb(34, 197, 94)",
           backgroundColor: "rgba(34, 197, 94, 0.2)",
           borderWidth: 2,
-          tension: 0.4, // Make it more of a smooth spline
+          tension: 0.4,
           pointRadius: 2,
           pointHoverRadius: 5,
           fill: false,
-          order: 1, // Lower order renders on top
+          order: 1,
           yAxisID: "y",
         });
       }
     } else {
-      // Standard chart types
       if (consumptionData.length > 0) {
         const consumptionMap = new Map(
           consumptionData.map((item) => [
@@ -280,7 +275,6 @@ const EnergyChart = ({
           },
           title: (items: any) => {
             if (timeFrame === "hourly" && items.length > 0) {
-              // Try to find the original date from the datasets
               const itemIndex = items[0].dataIndex;
               if (itemIndex !== undefined) {
                 const dataset = items[0].dataset;
@@ -321,13 +315,13 @@ const EnergyChart = ({
           maxRotation: 45,
           minRotation: 0,
           autoSkip: true,
-          maxTicksLimit: timeFrame === "hourly" ? 12 : 20, // Show fewer labels for hourly data
+          maxTicksLimit: timeFrame === "hourly" ? 12 : 20,
           font: {
-            size: 10, // Smaller font for better fit
+            size: 10,
           },
         },
         grid: {
-          display: false, // Hide vertical grid lines to reduce clutter
+          display: false,
         },
       },
     },

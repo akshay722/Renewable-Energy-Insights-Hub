@@ -2,7 +2,6 @@ import React from "react";
 import { EnergySourceType } from "../../types";
 import Icon from "../icons/Icon";
 
-// Simplified mapping only for labels
 const sourceTypeMap: Record<string, { label: string }> = {
   solar: { label: "Solar" },
   wind: { label: "Wind" },

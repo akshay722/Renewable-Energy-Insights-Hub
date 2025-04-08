@@ -1,11 +1,6 @@
 import axios from "axios";
 import queryString from "query-string";
-import {
-  EnergyFilter,
-  EnergyConsumption,
-  EnergyGeneration,
-  EnergySummary,
-} from "../types";
+import { EnergyFilter, EnergySummary } from "../types";
 
 // Get API URL from environment variables
 const API_BASE_URL =
@@ -15,14 +10,7 @@ const IS_PRODUCTION = import.meta.env.VITE_ENV === "production";
 // Create axios instance with base URL and default headers
 const api = axios.create({
   baseURL: API_BASE_URL,
-  // Longer timeout for production environments
   timeout: IS_PRODUCTION ? 30000 : 10000,
-  // Don't allow redirects which might cause protocol switching
-  maxRedirects: 0,
-  // Force protocol to stay as HTTP
-  headers: {
-    'X-Requested-With': 'XMLHttpRequest',
-  },
   paramsSerializer: (params) =>
     queryString.stringify(params, { arrayFormat: "none" }),
 });
@@ -123,50 +111,12 @@ export const projectsApi = {
     const response = await api.post("/projects", data);
     return response.data;
   },
-
-  update: async (
-    id: number,
-    data: { name?: string; description?: string; location?: string }
-  ) => {
-    const response = await api.put(`/projects/${id}`, data);
-    return response.data;
-  },
-
-  delete: async (id: number) => {
-    await api.delete(`/projects/${id}`);
-    return true;
-  },
 };
 
 // Energy Consumption API
 export const consumptionApi = {
   getAll: async (filters?: EnergyFilter) => {
     const response = await api.get("/energy/consumption", { params: filters });
-    return response.data;
-  },
-
-  getById: async (id: number) => {
-    const response = await api.get(`/energy/consumption/${id}`);
-    return response.data;
-  },
-
-  create: async (data: Partial<EnergyConsumption>) => {
-    const response = await api.post("/energy/consumption", data);
-    return response.data;
-  },
-
-  update: async (id: number, data: Partial<EnergyConsumption>) => {
-    const response = await api.put(`/energy/consumption/${id}`, data);
-    return response.data;
-  },
-
-  delete: async (id: number) => {
-    await api.delete(`/energy/consumption/${id}`);
-    return true;
-  },
-
-  batchCreate: async (data: Partial<EnergyConsumption>[]) => {
-    const response = await api.post("/energy/consumption/batch-create", data);
     return response.data;
   },
 
@@ -189,31 +139,6 @@ export const consumptionApi = {
 export const generationApi = {
   getAll: async (filters?: EnergyFilter) => {
     const response = await api.get("/energy/generation", { params: filters });
-    return response.data;
-  },
-
-  getById: async (id: number) => {
-    const response = await api.get(`/energy/generation/${id}`);
-    return response.data;
-  },
-
-  create: async (data: Partial<EnergyGeneration>) => {
-    const response = await api.post("/energy/generation", data);
-    return response.data;
-  },
-
-  update: async (id: number, data: Partial<EnergyGeneration>) => {
-    const response = await api.put(`/energy/generation/${id}`, data);
-    return response.data;
-  },
-
-  delete: async (id: number) => {
-    await api.delete(`/energy/generation/${id}`);
-    return true;
-  },
-
-  batchCreate: async (data: Partial<EnergyGeneration>[]) => {
-    const response = await api.post("/energy/generation/batch-create", data);
     return response.data;
   },
 

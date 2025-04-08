@@ -113,7 +113,7 @@ const ConsumptionGenerationBarChart: React.FC<
       {
         label: "Grid Consumption",
         data: [gridConsumption],
-        backgroundColor: "rgba(100, 116, 139, 0.7)", // Slate color for grid
+        backgroundColor: "rgba(100, 116, 139, 0.7)",
         borderColor: "rgb(71, 85, 105)",
         borderWidth: 1,
         stack: "consumption",
@@ -121,7 +121,7 @@ const ConsumptionGenerationBarChart: React.FC<
       {
         label: "Renewable Consumption",
         data: [renewableConsumption],
-        backgroundColor: "rgba(59, 130, 246, 0.7)", // Blue for renewable consumption
+        backgroundColor: "rgba(59, 130, 246, 0.7)",
         borderColor: "rgb(37, 99, 235)",
         borderWidth: 1,
         stack: "consumption",
@@ -129,7 +129,7 @@ const ConsumptionGenerationBarChart: React.FC<
       {
         label: "Generation",
         data: [totalGeneration],
-        backgroundColor: "rgba(34, 197, 94, 0.7)", // Green for generation
+        backgroundColor: "rgba(34, 197, 94, 0.7)",
         borderColor: "rgb(22, 163, 74)",
         borderWidth: 1,
         stack: "generation",
@@ -156,9 +156,9 @@ const ConsumptionGenerationBarChart: React.FC<
                 }
                 return "rgba(255, 234, 0, 0.2)";
               },
-              borderColor: "rgba(234, 179, 8, 0.8)", // Yellow border
+              borderColor: "rgba(234, 179, 8, 0.8)",
               borderWidth: 2,
-              stack: "generation", // Add to generation stack to extend it
+              stack: "generation",
             },
           ]
         : []),
@@ -206,7 +206,6 @@ const ConsumptionGenerationBarChart: React.FC<
           display: true,
           text: "Energy (kWh)",
         },
-        // This stacks bars with the same 'stack' property and separates those with different 'stack' properties
       },
     },
   };

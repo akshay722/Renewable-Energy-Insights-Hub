@@ -17,12 +17,8 @@ import ConsumptionGenerationBarChart from "../components/charts/ConsumptionGener
 import Icon from "../components/icons/Icon";
 
 const Dashboard = () => {
-  // Use global date range from context
   const { startDate, endDate } = useDateRange();
-  // Get token (or isAuthenticated) from auth context
   const { token, isAuthenticated } = useAuth();
-
-  // State for API data
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
   const [summary, setSummary] = useState<EnergySummary | null>(null);
@@ -42,8 +38,6 @@ const Dashboard = () => {
     EnergySourceType.GRID,
     EnergySourceType.SOLAR,
   ];
-
-  // Project selection state
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
     null
@@ -71,8 +65,7 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      // Fetch a larger range for hourly data.
-      const thirtyDaysAgo = format(subDays(new Date(), 30), "yyyy-MM-dd");
+      const sevenDaysAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
       // Prepare filter params
       const filters = {
         start_date: startDate,
@@ -95,7 +88,7 @@ const Dashboard = () => {
         ),
         consumptionApi.getDailyAggregate(filters),
         generationApi.getDailyAggregate(filters),
-        consumptionApi.getAll({ ...filters, start_date: thirtyDaysAgo }),
+        consumptionApi.getAll({ ...filters, start_date: sevenDaysAgo }),
       ]);
 
       setSummary(summaryData);
@@ -127,7 +120,6 @@ const Dashboard = () => {
 
   // Reload data when the date range, selected project, or auth token changes
   useEffect(() => {
-    // Only load dashboard data if the user is authenticated
     if (isAuthenticated && token) {
       loadDashboardData();
     }
@@ -228,7 +220,6 @@ const Dashboard = () => {
       {/* Energy Source Distribution and Consumption vs Generation Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <div className="card">
-          {/* Dynamic title based on available data */}
           <h2
             className="text-xl font-semibold mb-4"
             style={{ color: "var(--color-text)" }}

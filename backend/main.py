@@ -38,7 +38,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Renewable Energy Insights Hub API", "version": "1.0.0"}
+    return {"message": "Welcome to Wattwize API", "version": "1.0.0"}
 
 @app.get("/health")
 async def health_check():

@@ -1,6 +1,6 @@
-# Renewable Energy Insights Hub - AWS Deployment Guide
+# Wattwize - AWS Deployment Guide
 
-This guide provides comprehensive instructions for deploying the Renewable Energy Insights Hub to AWS Free Tier services using Terraform.
+This guide provides comprehensive instructions for deploying the Wattwize to AWS Free Tier services using Terraform.
 
 ## Architecture Overview
 

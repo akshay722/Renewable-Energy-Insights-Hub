@@ -6,10 +6,8 @@ from urllib.parse import quote_plus
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
-    # Database settings
     DB_USER: str = os.getenv("DB_USER", "root")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "Qywter@123")
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
@@ -22,12 +20,11 @@ class Settings(BaseSettings):
         if os.getenv("DATABASE_URL"):
             return os.getenv("DATABASE_URL")
         
-        # URL encode the password to handle special characters
         password = quote_plus(self.DB_PASSWORD)
         return f"mysql+pymysql://{self.DB_USER}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "Renewable Energy Insights Hub"
+    PROJECT_NAME: str = "Wattwize"
     
     # Security settings
     SECRET_KEY: str = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
@@ -39,20 +36,15 @@ class Settings(BaseSettings):
         "http://localhost:3000", 
         "http://localhost:8080", 
         "http://localhost:5173",
-        "http://frontend:5173",  # Allow frontend service in Docker network
+        "http://frontend:5173",
     ]
     
-    # Add production domains when deployed
     def get_cors_origins(self):
         origins = self.CORS_ORIGINS.copy()
-        # Add frontend URL from environment (CloudFront or S3 website)
         if os.getenv("FRONTEND_URL"):
             origins.append(os.getenv("FRONTEND_URL"))
-        # Add in production mode
         if self.ENVIRONMENT == "production":
             origins.extend([
-                # Add your production domains here
-                "https://renewableenergyinsightshub.com",
                 "https://*.amazonaws.com",
                 "https://*.cloudfront.net"
             ])

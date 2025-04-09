@@ -1,6 +1,6 @@
-# Terraform Deployment for Renewable Energy Insights Hub
+# Terraform Deployment for Wattwize
 
-This configuration uses AWS Free Tier resources to deploy the full Renewable Energy Insights Hub.
+This configuration uses AWS Free Tier resources to deploy the full Wattwize.
 
 ## Quick Start
 

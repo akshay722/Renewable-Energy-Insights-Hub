@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-This directory contains the automated deployment workflow for the Renewable Energy Insights Hub.
+This directory contains the automated deployment workflow for the Wattwize.
 
 ## Main Deployment Workflow
 

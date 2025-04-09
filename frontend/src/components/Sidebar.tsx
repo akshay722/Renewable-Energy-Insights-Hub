@@ -53,7 +53,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
               <img
                 src="/renewable.png"
                 className="h-8 w-8 text-primary"
-                alt="Renewable Energy Insights Hub Logo"
+                alt="Wattwize Logo"
               />
               <span
                 className="ml-2 text-xl font-semibold"

@@ -1,4 +1,4 @@
-# Renewable Energy Insights Hub
+# Wattwize
 
 A comprehensive platform for monitoring and analyzing renewable energy consumption and generation data with interactive visualizations.
 

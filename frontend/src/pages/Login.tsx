@@ -55,7 +55,7 @@ const Login = () => {
           <img
             src="/renewable.png"
             className="h-12 w-12 mx-auto text-primary"
-            alt="Renewable Energy Insights Hub Logo"
+            alt="Wattwize Logo"
           />
           <h2
             className="mt-4 text-3xl font-extrabold"

@@ -53,10 +53,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
           </div>
         </div>
 
-        {/* Text */}
-        <h2 className="text-2xl font-bold text-primary-dark mb-2">
-          Renewable Energy Insights
-        </h2>
+        <h2 className="text-2xl font-bold text-primary-dark mb-2">Wattwize</h2>
         <p className="text-gray-600 mb-8">{message}</p>
 
         {/* Progress bar */}

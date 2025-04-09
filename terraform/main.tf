@@ -299,7 +299,7 @@ resource "aws_iam_instance_profile" "eb_instance_profile" {
 # Elastic Beanstalk application
 resource "aws_elastic_beanstalk_application" "app" {
   name        = var.app_name
-  description = "Renewable Energy Insights Hub"
+  description = "Wattwize"
 }
 
 # S3 bucket for EB deployment files

@@ -1,6 +1,6 @@
-# Renewable Energy Insights Hub Backend
+# Wattwize Backend
 
-A FastAPI-based backend service for the Renewable Energy Insights Hub that provides data visualization for energy consumption and generation with secure user access.
+A FastAPI-based backend service for the Wattwize that provides data visualization for energy consumption and generation with secure user access.
 
 ## Features
 

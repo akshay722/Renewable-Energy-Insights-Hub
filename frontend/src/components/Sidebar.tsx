@@ -59,7 +59,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                 className="ml-2 text-xl font-semibold"
                 style={{ color: "var(--color-text)" }}
               >
-                Energy Insights
+                Wattwize
               </span>
             </div>
             <button

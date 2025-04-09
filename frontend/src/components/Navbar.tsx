@@ -39,7 +39,7 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
                 className="ml-2 text-xl font-semibold hidden md:block"
                 style={{ color: "var(--color-text)" }}
               >
-                Energy Insights
+                Wattwize
               </span>
             </Link>
           </div>

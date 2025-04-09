@@ -11,12 +11,15 @@ A comprehensive platform for monitoring and analyzing renewable energy consumpti
 ## Features
 
 - **Real-time Energy Monitoring**: Track electricity consumption and generation across multiple sources
+- **Consumption vs. Generation Analysis**: Visualize hourly, daily, or weekly consumption and generation data
 - **Source Distribution Analysis**: Visualize energy distribution by source type (solar, wind, hydro, etc.)
-- **Multi-Project Management**: Organize and track data across multiple renewable energy projects
+- **Portfolio Management**: Track data across multiple energy projects in portfolio
 - **Environmental Impact Metrics**: Calculate CO2 emissions avoided and renewable percentage
 - **Interactive Data Visualization**: Time-series charts, breakdowns, and comparison views
-- **Date Range Filtering**: Analyze data across custom time periods
-- **Responsive Design**: Full functionality on desktop and mobile devices
+- **Date Range and Energy Source Filtering**: Analyze data across custom time periods and for different sources
+- **Save Visualizations**: Save custom chart configurations for future reference
+- **Alerts**: Configured threshold-based alerts for consumption and generation spikes and drops
+- **Responsive Design**: Full responsive across devices
 - **Dark/Light Mode**: Choose your preferred UI theme
 
 ## Project Architecture
@@ -62,6 +65,14 @@ Password: password123
 
 ## Project Structure and Components
 
+### Frontend Pages
+
+- **Dashboard**: Overview of energy metrics
+- **Projects**: List and management of energy projects
+- **Project Details**: Detailed analysis of a specific project
+- **Login/Register**: Authentication pages
+- **Profile**: User account management
+
 ### Database Structure
 
 The MySQL database contains the following main tables:
@@ -104,14 +115,6 @@ The MySQL database contains the following main tables:
 #### Insights
 
 - `GET /api/insights/summary`: Get energy summary (consumption vs. generation)
-
-### Frontend Pages
-
-- **Dashboard**: Overview of energy metrics
-- **Projects**: List and management of energy projects
-- **Project Details**: Detailed analysis of a specific project
-- **Login/Register**: Authentication pages
-- **Profile**: User account management
 
 ## Manual Setup (Without Docker)
 
@@ -234,7 +237,7 @@ docker compose down -v
 
 6. **Environmental Impact**: CO2 emissions avoided are calculated based on the difference between renewable generation and grid consumption.
 
-7. **Mock Data Generation**: The application includes 2 months of pre-generated mock data with natural variance to simulate real-world usage patterns across different energy sources, providing a realistic demonstration environment without data inconsistencies.
+7. **Mock Data Generation**: The application includes 2 months of pre-generated hourly mock data with natural variance to simulate real-world usage patterns across different energy sources, providing a realistic demonstration environment without data inconsistencies.
 
 ## Future Improvements
 

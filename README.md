@@ -2,53 +2,116 @@
 
 A comprehensive platform for monitoring and analyzing renewable energy consumption and generation data with interactive visualizations.
 
+### Demo Environment
+
+- **Frontend URL**: https://d2b2j5yt43rmm.cloudfront.net
+- **Backend API**: https://d2rbp73b060qyp.cloudfront.net
+- **API Documentation**: https://d2rbp73b060qyp.cloudfront.net/docs
+
+## Features
+
+- **Real-time Energy Monitoring**: Track electricity consumption and generation across multiple sources
+- **Source Distribution Analysis**: Visualize energy distribution by source type (solar, wind, hydro, etc.)
+- **Multi-Project Management**: Organize and track data across multiple renewable energy projects
+- **Environmental Impact Metrics**: Calculate CO2 emissions avoided and renewable percentage
+- **Interactive Data Visualization**: Time-series charts, breakdowns, and comparison views
+- **Date Range Filtering**: Analyze data across custom time periods
+- **Responsive Design**: Full functionality on desktop and mobile devices
+- **Dark/Light Mode**: Choose your preferred UI theme
+
+## Project Architecture
+
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS + Chart.js
+- **Backend**: FastAPI + SQLAlchemy + MySQL
+- **Containerization**: Docker + Docker Compose
+
+## Prerequisites
+
+Before getting started, ensure you have the following installed on your system:
+
+- [Docker](https://docs.docker.com/get-docker/) (v20.10.0+)
+- [Docker Compose](https://docs.docker.com/compose/install/) (v2.0.0+)
+- [Git](https://git-scm.com/downloads) (v2.30.0+)
+
 ## Quick Start with Docker
 
 The easiest way to get started is using Docker, which sets up the entire application stack including database, backend, and frontend.
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Git
-
-### One-Command Setup
 
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/RenewableEnergyInsightsHub.git
 cd RenewableEnergyInsightsHub
 
-# Start all services
+# Build and start all services
+docker compose build
 docker compose up -d
 ```
 
 ### Accessing the Application
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
 
-### Authentication
+### Default Login Credentials
 
-Login with these credentials:
+```
+Email: demo@example.com
+Password: password123
+```
 
-- Email: `demo@example.com`
-- Password: `password123`
+## Project Structure and Components
 
-## Features
+### Database Structure
 
-- Real-time energy consumption and generation monitoring
-- Historical data visualization with interactive charts
-- Source filtering (solar, wind, hydro, etc.)
-- User authentication and profile management
-- Project management
-- Responsive UI built with React and Tailwind CSS
+The MySQL database contains the following main tables:
 
-## Project Architecture
+- **users**: User accounts and authentication details
+- **projects**: Energy projects that belong to users
+- **energy_consumption**: Records of energy usage categorized by source
+- **energy_generation**: Records of energy generation from renewable sources
 
-- **Frontend**: React + TypeScript + Vite + Chart.js
-- **Backend**: FastAPI + SQLAlchemy + MySQL
-- **Containerization**: Docker + Docker Compose
+### Backend API Endpoints
+
+#### Authentication
+
+- `POST /api/auth/login`: Authenticate a user
+- `POST /api/auth/register`: Register a new user
+- `GET /api/auth/me`: Get the currently authenticated user
+
+#### Projects
+
+- `GET /api/projects`: List all projects for current user
+- `POST /api/projects`: Create a new project
+- `GET /api/projects/{id}`: Get a specific project
+- `PUT /api/projects/{id}`: Update a project
+- `DELETE /api/projects/{id}`: Delete a project
+
+#### Energy Consumption
+
+- `POST /api/energy/consumption`: Add consumption data
+- `GET /api/energy/consumption`: Get raw consumption data
+- `GET /api/energy/consumption/aggregate/daily`: Get daily aggregated consumption
+- `GET /api/energy/consumption/aggregate/weekly`: Get weekly aggregated consumption
+
+#### Energy Generation
+
+- `POST /api/energy/generation`: Add generation data
+- `GET /api/energy/generation`: Get raw generation data
+- `GET /api/energy/generation/aggregate/daily`: Get daily aggregated generation
+- `GET /api/energy/generation/aggregate/weekly`: Get weekly aggregated generation
+
+#### Insights
+
+- `GET /api/insights/summary`: Get energy summary (consumption vs. generation)
+
+### Frontend Pages
+
+- **Dashboard**: Overview of energy metrics
+- **Projects**: List and management of energy projects
+- **Project Details**: Detailed analysis of a specific project
+- **Login/Register**: Authentication pages
+- **Profile**: User account management
 
 ## Manual Setup (Without Docker)
 
@@ -91,7 +154,7 @@ npm install
 npm run dev
 ```
 
-## Database Management
+## Data Management
 
 ### Data Persistence
 
@@ -102,79 +165,101 @@ The Docker setup includes a volume for the database, so your data persists betwe
 If you need to reset to the initial database state:
 
 ```bash
-docker compose down -v && docker compose up -d
+docker compose down -v
+docker compose up -d
 ```
 
 The `-v` flag removes volumes, ensuring a fresh database is created.
 
-### Database Seeding
-
-For development, you can use the Python seed script to populate the database with test data:
+## Docker Commands Reference
 
 ```bash
-cd backend
-python seed_database.py
-```
+# Build all containers
+docker compose build
 
-## Docker Commands
-
-```bash
-# Stop all containers
-docker compose down
-
-# Rebuild and restart containers
-docker compose up -d --build
+# Start all containers in the background
+docker compose up -d
 
 # View logs
 docker compose logs -f
+
+# Stop all containers
+docker compose down
+
+# Stop all containers and remove volumes
+docker compose down -v
 ```
 
-## Main Features
+## Key Assumptions
 
-- **Dashboard**: Overview of energy consumption and generation
-- **Consumption Tracking**: View and filter energy consumption data
-- **Generation Monitoring**: Track renewable energy generation
-- **Source Filtering**: Filter by energy source types (solar, wind, etc.)
-- **Time Range Selection**: View data by hour, day, week, or month
-- **Interactive Charts**:
-  - Energy consumption vs. generation (line charts)
-  - Source distribution pie charts
+1. **Portfolio of Assets/Projects**: Users organize their energy data into a portfolio of assets or projects, which can represent physical locations, installations, or logical groupings of renewable energy resources.
 
-## AWS Deployment with Terraform and GitHub Actions
+2. **Dual Tracking**: Each project can track both energy consumption and generation, or just one of them depending on the setup.
 
-This project includes automated deployment using Terraform and GitHub Actions to deploy to AWS Free Tier:
+3. **Energy Grid Integration**: Excess energy generated and not consumed by a user's projects is still counted toward their overall renewable energy balance.
 
-### Infrastructure as Code (Terraform)
+4. **Source Classification**: Energy is categorized by source types (solar, wind, hydro, geothermal, biomass, grid) for detailed analysis.
 
-The `terraform/` directory contains the Terraform configuration for deploying:
+5. **Time-Series Data**: All energy data is time-stamped to enable historical analysis and trend identification.
 
-- S3 bucket for the frontend
-- Elastic Beanstalk for the Python backend
-- IAM roles and security configuration
-- CORS settings for cross-origin communication
+6. **Environmental Impact**: CO2 emissions avoided are calculated based on the difference between renewable generation and grid consumption.
 
-### Automated CI/CD (GitHub Actions)
+7. **Mock Data Generation**: The application includes 2 months of pre-generated mock data with natural variance to simulate real-world usage patterns across different energy sources, providing a realistic demonstration environment without data inconsistencies.
 
-The `.github/workflows/` directory contains workflows for:
+## Future Improvements
 
-1. **Infrastructure Deployment**: Automatically creates and updates AWS resources
-2. **Application Deployment**: Builds and deploys the application code
-3. **Budget Monitoring**: Ensures costs stay within AWS Free Tier limits
+1. **Predictive Analytics**: Implement machine learning to predict future energy generation and consumption.
 
-### Setup and Usage
+2. **Energy Shifting Optimization**: Add intelligent algorithms to suggest optimal times for shifting energy usage to periods of peak renewable generation.
 
-1. Fork this repository
-2. Set up the required GitHub Secrets:
-   - `AWS_ROLE_TO_ASSUME`: ARN of an IAM role with deployment permissions
-   - `DB_PASSWORD`: Password for the database
-3. Push to the main branch to trigger deployment
+3. **Comprehensive Testing Suite**: Develop end-to-end, integration, and unit tests to ensure application reliability and facilitate future development.
 
-See the README files in the `terraform/` and `.github/workflows/` directories for detailed instructions.
+4. **Infrastructure Scaling**: Enhance AWS deployment to support higher traffic and data volumes while maintaining cost-efficiency:
 
-## Deployment
+   - Auto-scaling for Elastic Beanstalk
+   - Database read replicas for high query loads
+   - CloudFront optimization for global access
 
-For deploying to AWS, see [DEPLOYMENT.md](DEPLOYMENT.md) which includes detailed instructions for:
+5. **Mobile Application**: Develop native mobile applications for iOS and Android.
 
-- Setting up AWS Free Tier resources
-- Deploying the application to Elastic Beanstalk
-- Setting up a CI/CD pipeline
+6. **Real-time Integrations**: Add support for IoT device integration for real-time data collection.
+
+7. **Energy Trading**: Implement simulated or real energy trading features for surplus renewable energy.
+
+8. **Additional Visualizations**: Expand data visualization options with more chart types and reports.
+
+9. **Enhanced User Management**: Add support for teams and organizations with role-based access control.
+
+10. **Public API**: Create a public API for third-party integrations.
+
+## Deployment to AWS
+
+This project can be deployed to AWS Free Tier resources using Terraform for infrastructure as code and GitHub Actions for CI/CD automation.
+
+### AWS Architecture
+
+- **Frontend**: S3 bucket with CloudFront distribution (HTTPS enabled)
+- **Backend API**: Elastic Beanstalk running Python FastAPI application
+- **Database**: RDS MySQL instance (db.t3.micro - Free Tier eligible)
+- **Security**: IAM roles, security groups, HTTPS configuration
+- **HTTPS for Backend**: Manually configured through CloudFront after initial infrastructure setup
+
+### Deployment Methods
+
+1. **Automated Deployment with GitHub Actions**:
+
+   - Terraform automatically provisions AWS infrastructure
+   - Frontend is built and deployed to S3/CloudFront
+   - Backend is packaged and deployed to Elastic Beanstalk
+   - Database migrations and seeding handled automatically
+
+2. **Manual Deployment**:
+   - Terraform scripts for infrastructure provisioning
+   - Step-by-step commands for AWS resources setup
+   - Database migration and initial data import
+
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

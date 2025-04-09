@@ -1,158 +1,198 @@
 # Renewable Energy Insights Hub - AWS Deployment Guide
 
-This guide explains how to deploy the application to AWS using GitHub Actions and Terraform, designed to stay within the AWS Free Tier limits.
+This guide provides comprehensive instructions for deploying the Renewable Energy Insights Hub to AWS Free Tier services using Terraform.
 
 ## Architecture Overview
 
-- **Frontend**: S3 + CloudFront (Static website hosting with HTTPS)
-- **Backend**: Elastic Beanstalk with Python (FastAPI application)
-- **Database**: RDS MySQL (Free tier db.t3.micro)
+- **Frontend**: S3 bucket with CloudFront distribution (HTTPS-enabled static website)
+- **Backend**: Elastic Beanstalk running Python FastAPI application
+- **Database**: RDS MySQL instance (db.t3.micro)
+- **Security**: IAM roles, security groups, and HTTPS configuration
+- **HTTPS for Backend**: Manually configured through CloudFront distribution after initial deployment
 
 ## Prerequisites
 
 1. AWS Account with Free Tier eligibility
-2. GitHub account for CI/CD
+2. AWS CLI installed and configured
+3. Terraform CLI (v1.0.0+)
 
-## Step 1: AWS Setup
+## Terraform Deployment
 
-1. **Create IAM User**:
-   - Sign in to the AWS Management Console
-   - Go to IAM service
-   - Create a new user with programmatic access
-   - Attach these permissions:
-     - `AmazonS3FullAccess`
-     - `AmazonRDSFullAccess`
-     - `AWSElasticBeanstalkFullAccess`
-     - `CloudFrontFullAccess`
-   - Save the Access Key ID and Secret Access Key
-
-2. **Create S3 Buckets**:
-   - Create a bucket for the frontend (`renewable-energy-frontend-*`)
-   - Create a bucket for Elastic Beanstalk (`renewable-energy-app-versions-*`)
-
-## Step 2: GitHub Setup
-
-Add these secrets to your GitHub repository:
-
-- `AWS_ACCESS_KEY_ID`: Your IAM user's access key
-- `AWS_SECRET_ACCESS_KEY`: Your IAM user's secret key
-- `S3_BUCKET`: Your frontend S3 bucket name
-- `EB_BUCKET`: Your Elastic Beanstalk deployment bucket
-- `DB_PASSWORD`: Database password
-
-## Step 3: Terraform Deployment
+The recommended deployment method is using Terraform to provision all AWS resources consistently.
 
 1. **Initialize Terraform**:
+
    ```bash
    cd terraform
    terraform init
    ```
 
-2. **Create terraform.tfvars**:
+2. **Configure Deployment Variables**:
+   Create a `terraform.tfvars` file with your configuration:
+
    ```
    aws_region = "us-east-1"
-   frontend_bucket_name = "your-s3-bucket-name"
-   db_password = "your-secure-password"
+   app_name = "renewable-energy-app"
+   env_name = "production-env"
+   frontend_bucket_name = "renewable-energy-frontend"
+   db_name = "renewable_energy_db_sql"
+   db_user = "admin"
+   db_password = "YourSecurePassword"
    ```
 
 3. **Deploy Infrastructure**:
+
    ```bash
+   terraform plan -var-file=terraform.tfvars
    terraform apply -var-file=terraform.tfvars
    ```
 
-## Step 4: Database Initialization
+4. **Store Outputs for Reference**:
 
-The database is set up for direct import of your data:
-
-1. **Get RDS Endpoint from Terraform Output**:
    ```bash
+   # Get key infrastructure details
+   terraform output
+
+   # Save specific outputs to variables
+   FRONTEND_URL=$(terraform output -raw frontend_url)
+   BACKEND_URL=$(terraform output -raw backend_url)
+   DB_ENDPOINT=$(terraform output -raw database_endpoint)
+   ```
+
+## Database Initialization
+
+After Terraform creates the RDS instance, you'll need to import the initial schema and data:
+
+1. **Import Database Schema and Seed Data**:
+
+   ```bash
+   # Using outputs from Terraform
    DB_ENDPOINT=$(terraform output -raw database_endpoint)
    DB_USER=$(terraform output -raw rds_username)
    DB_NAME=$(terraform output -raw database_name)
-   ```
 
-2. **Import Data to RDS**:
-   ```bash
-   # Use the init-db.sql file to populate the database
+   # Import the initial database schema and data
    mysql -h $DB_ENDPOINT -u $DB_USER -p $DB_NAME < init-db.sql
    ```
 
-3. **Security Update After Import** (Optional):
-   After you've imported your data, you may want to secure the database by removing the public access:
-   
-   Edit the main.tf file:
-   - Change `publicly_accessible = true` to `publicly_accessible = false`
-   - Remove the temporary ingress rule that allows access from anywhere (`cidr_blocks = ["0.0.0.0/0"]`)
-   - Keep the rule that allows access from Elastic Beanstalk
-   
-   Then apply changes:
+2. **Secure Database Access** (After import):
+
+   For production use, you should secure the database by updating the Terraform configuration:
+
+   ```
+   # In main.tf, change these settings
+   publicly_accessible = false  # Was temporarily true for data import
+
+   # Remove the public access security group rule
+   # Only keep the rule that allows access from Elastic Beanstalk
+   ```
+
+   Then apply the changes:
+
    ```bash
    terraform apply -var-file=terraform.tfvars
    ```
-   
-   The Elastic Beanstalk application will still be able to connect to the database through the security group rule that allows traffic from the Elastic Beanstalk security group.
 
-## Step 5: CI/CD Deployment
+## Manual Deployment Alternative
 
-The GitHub Actions workflow will automatically:
-1. Build and deploy the frontend to S3
-2. Package and deploy the backend to Elastic Beanstalk
+While Terraform is recommended, you can also deploy manually:
 
-This happens automatically when you push to the main branch.
+### Backend Deployment
 
-## Security Features
+1. **Configure Environment**:
+   Create a `.env.production` file in the backend directory:
 
-This deployment includes HTTPS security:
+   ```
+   DATABASE_URL=mysql+pymysql://admin:YourPassword@your-db-endpoint.rds.amazonaws.com:3306/renewable_energy_db_sql
+   SECRET_KEY=your_production_secret_key
+   ALLOW_ORIGINS=https://your-cloudfront-domain.cloudfront.net
+   ```
 
-1. **Frontend HTTPS** via CloudFront:
-   - CloudFront provides HTTPS with its default domain
-   - All HTTP requests redirect to HTTPS
+2. **Deploy with Elastic Beanstalk CLI**:
 
-2. **Backend Security**:
-   - Database temporarily accessible for import
-   - Security groups allow initial import and deployment
+   ```bash
+   cd backend
+   pip install awsebcli
+   eb init renewable-energy-backend --platform python-3.9
+   eb create production-env
+   ```
 
-## Important Security Notes
+### Frontend Deployment
 
-1. **Sensitive Files**:
-   - Never commit `terraform.tfvars` to Git - it contains sensitive database credentials
-   - Use the provided `terraform.tfvars.example` as a template 
-   - Store AWS credentials as GitHub Secrets, not in code
+1. **Build the Frontend**:
 
-2. **Database Security**:
-   - After initial setup, make the database private by setting `publicly_accessible = false`
-   - Remove the CIDR block rule allowing access from anywhere (0.0.0.0/0)
-   - Consider changing the default database password after deployment
+   ```bash
+   cd frontend
+   npm install
+   # Update API endpoint in src/services/api.ts to point to your Elastic Beanstalk URL
+   npm run build
+   ```
 
-3. **Security Best Practices**:
-   - Review the `.gitignore` file to ensure sensitive files are excluded
-   - Consider using AWS Secrets Manager for database credentials in a production environment
-   - Rotate AWS access keys periodically
+2. **Deploy to S3 and Configure CloudFront**:
+
+   ```bash
+   # Create S3 bucket
+   aws s3 mb s3://renewable-energy-frontend
+
+   # Upload build files
+   aws s3 sync dist/ s3://renewable-energy-frontend --acl public-read
+
+   # Create CloudFront distribution (simplified command)
+   aws cloudfront create-distribution --origin-domain-name renewable-energy-frontend.s3.amazonaws.com
+   ```
+
+## Production Security Considerations
+
+1. **Database Security**:
+
+   - Set RDS `publicly_accessible = false` after initial data import
+   - Configure security groups to only allow traffic from Elastic Beanstalk
+
+2. **HTTPS and Security Headers**:
+
+   - CloudFront provides HTTPS for the frontend automatically
+   - For the backend API, create a separate CloudFront distribution manually after deployment:
+     - Add the Elastic Beanstalk endpoint as a custom origin
+     - Configure proper cache behaviors for API endpoints
+     - Set up a custom domain with SSL certificate (optional)
+   - Configure Content Security Policy (CSP) headers
+   - Set CORS headers on the backend
+
+3. **Secrets Management**:
+   - Store secrets in environment variables, not in code
+   - Consider AWS Secrets Manager for production credentials
 
 ## Cleaning Up Resources
 
-When you're done with the assignment, clean up to avoid charges:
+To avoid AWS charges when finished:
 
 ```bash
+# Using Terraform (recommended)
 cd terraform
 terraform destroy -var-file=terraform.tfvars
+
+# Or manually using AWS CLI
+aws cloudfront delete-distribution --id <distribution-id> --if-match <etag>
+aws s3 rm s3://renewable-energy-frontend --recursive
+aws s3 rb s3://renewable-energy-frontend
+eb terminate production-env
+aws rds delete-db-instance --db-instance-identifier renewable-energy-db --skip-final-snapshot
 ```
 
-## Troubleshooting
+## Troubleshooting Common Issues
 
-1. **Frontend Not Loading**:
-   - Check CloudFront distribution status
-   - Verify S3 bucket has the correct files
+1. **Database Connection Errors**:
 
-2. **Backend Connection Issues**:
-   - Check Elastic Beanstalk health
-   - Verify security group settings
+   - Verify security group rules allow traffic from Elastic Beanstalk
+   - Check that DATABASE_URL environment variable is correct
 
-3. **Database Connection Errors**:
-   - Confirm RDS instance is running
-   - Check database credentials in environment variables
+2. **Frontend Access Issues**:
 
-4. **Database Import Issues**:
-   - Ensure MySQL client is installed on your computer
-   - Check that the init-db.sql file is correctly formatted
-   - Confirm network connectivity to the RDS instance
+   - Ensure CloudFront distribution is enabled
+   - Check S3 bucket policy allows public read access
+   - Verify CloudFront error pages redirect to index.html for SPA routing
+
+3. **API Connection Problems**:
+   - Check CORS configuration in the backend
+   - Ensure API endpoint URL is correctly set in the frontend
+   - Verify that HTTPS is properly configured

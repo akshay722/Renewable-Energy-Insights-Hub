@@ -10,7 +10,6 @@ A FastAPI-based backend service for the Renewable Energy Insights Hub that provi
 - Energy source categorization (solar, wind, hydro, etc.)
 - Data filtering by date range and energy source
 - Energy efficiency insights and recommendations
-- Mock data generation for testing and demos
 
 ## Setup
 
@@ -82,31 +81,35 @@ The application starts automatically when the Docker container runs. The API wil
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-## API Endpoints
+### API Endpoints
 
-### Authentication
+#### Authentication
 
-- `POST /api/v1/auth/register` - Register a new user
-- `POST /api/v1/auth/login` - Login and get access token
+- `POST /api/auth/login`: Authenticate a user
+- `POST /api/auth/register`: Register a new user
+- `GET /api/auth/me`: Get the currently authenticated user
 
-### Users
+#### Projects
 
-- `GET /api/v1/users/me` - Get current user information
-- `PUT /api/v1/users/me` - Update current user information
+- `GET /api/projects`: List all projects for current user
+- `POST /api/projects`: Create a new project
+- `GET /api/projects/{id}`: Get a specific project
+- `PUT /api/projects/{id}`: Update a project
+- `DELETE /api/projects/{id}`: Delete a project
 
-### Energy Consumption
+#### Energy Consumption
 
-- `POST /api/v1/energy/consumption/` - Create new consumption record
-- `GET /api/v1/energy/consumption/` - Get consumption records with filtering
-- `GET /api/v1/energy/consumption/{consumption_id}` - Get specific consumption record
-- `PUT /api/v1/energy/consumption/{consumption_id}` - Update consumption record
-- `DELETE /api/v1/energy/consumption/{consumption_id}` - Delete consumption record
-- `POST /api/v1/energy/consumption/batch-create` - Create multiple records
-- `GET /api/v1/energy/consumption/aggregate/daily` - Get daily aggregated data
+- `POST /api/energy/consumption`: Add consumption data
+- `GET /api/energy/consumption`: Get raw consumption data
+- `GET /api/energy/consumption/aggregate/daily`: Get daily aggregated consumption
+- `GET /api/energy/consumption/aggregate/weekly`: Get weekly aggregated consumption
 
-### Insights
+#### Energy Generation
 
-- `GET /api/v1/insights/summary` - Get energy summary comparing consumption and generation
+- `POST /api/energy/generation`: Add generation data
+- `GET /api/energy/generation`: Get raw generation data
+- `GET /api/energy/generation/aggregate/daily`: Get daily aggregated generation
+- `GET /api/energy/generation/aggregate/weekly`: Get weekly aggregated generation
 
 ## Troubleshooting
 
@@ -125,29 +128,3 @@ The application starts automatically when the Docker container runs. The API wil
   python -c "import pymysql; pymysql.connect(host='host.docker.internal', user='root', password='Qywter@123', database='renewable_energy_db_sql')"
   ```
   If no error appears, the connection is successful.
-
-## Project Structure
-
-```
-.
-├── api/                # API routes and endpoints
-│   ├── endpoints/      # API endpoint modules
-│   └── deps.py         # Dependency functions
-├── core/               # Core functionality
-│   └── security.py     # Authentication and security
-├── models/             # SQLAlchemy models
-│   ├── base.py         # Base model class
-│   ├── user.py         # User model
-│   └── energy_data.py  # Energy models
-├── schemas/            # Pydantic schemas
-│   ├── user.py         # User schemas
-│   ├── energy.py       # Energy schemas
-│   └── token.py        # Token schemas
-├── utils/              # Utility functions
-│   └── mock_data.py    # Mock data generator
-├── main.py             # Main application entry point
-├── config.py           # Configuration settings
-├── database.py         # Database connection setup
-├── requirements.txt    # Project dependencies
-└── README.md           # This file
-```

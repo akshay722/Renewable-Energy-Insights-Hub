@@ -1,51 +1,66 @@
 # GitHub Actions Workflows
 
-This directory contains the automated deployment workflows for the Renewable Energy Insights Hub.
+This directory contains the automated deployment workflow for the Renewable Energy Insights Hub.
 
-## Workflows
+## Main Deployment Workflow
 
-### 1. Deploy Infrastructure (`terraform-deploy.yml`)
+### `deploy.yml`
 
-Creates and maintains AWS infrastructure using Terraform:
+This is the primary workflow that handles the complete deployment process for both frontend and backend components.
 
-- S3 bucket for frontend
-- Elastic Beanstalk for backend
-- RDS MySQL database
-- Security groups and IAM roles
+#### Workflow Triggers
 
-**Triggers:** Changes to `terraform/` directory or manual workflow dispatch
+- **Automatic**: Runs on push to the `main` branch
+- **Manual**: Can be triggered via workflow_dispatch in GitHub Actions UI
 
-### 2. Deploy Application (`deploy-application.yml`)
+#### Deployment Steps
 
-Deploys application code to existing infrastructure:
+1. **Setup and Authentication**
 
-- Verifies database connection
-- Deploys backend code to Elastic Beanstalk
-- Builds and deploys frontend to S3
+   - Checks out the repository code
+   - Configures AWS credentials using GitHub Secrets
 
-**Triggers:** Changes to application code or manual workflow dispatch
+2. **Frontend Deployment**
 
-### 3. Budget Alert (`budget-alert.yml`)
+   - Sets up Node.js environment (v18)
+   - Installs frontend dependencies
+   - Builds the React application
+   - Deploys built assets to S3
+   - Intelligently identifies and invalidates the associated CloudFront distribution
 
-Monitors AWS costs to ensure Free Tier compliance:
+3. **Backend Deployment**
+   - Sets up Python environment (v3.10)
+   - Installs backend dependencies
+   - Creates a deployment ZIP package
+   - Uploads the package to the deployment S3 bucket
+   - Creates a new Elastic Beanstalk application version
+   - Updates the Elastic Beanstalk environment with environment variables
 
-- Runs daily check of current AWS spending
-- Warns if approaching 80% of budget
+#### Environment Configuration
 
-**Triggers:** Daily schedule or manual workflow dispatch
+The workflow dynamically configures environment variables for the backend service:
 
-## Required Secrets
+- Database connection details
+- Environment-specific settings
+- CORS configurations
+- Frontend URL for cross-service communication
 
-- `AWS_ROLE_TO_ASSUME`: ARN of AWS IAM role with deployment permissions
-- `DB_PASSWORD`: MySQL database password
+## Required GitHub Secrets
 
-## AWS IAM Role Requirements
+For the workflow to function properly, these secrets must be configured:
 
-Ensure the AWS role has permissions for:
+- `AWS_ACCESS_KEY_ID`: AWS access key with deployment permissions
+- `AWS_SECRET_ACCESS_KEY`: AWS secret key
+- `S3_BUCKET`: S3 bucket name for frontend assets
+- `EB_BUCKET`: S3 bucket for Elastic Beanstalk deployments
+- `APP_NAME`: Elastic Beanstalk application name
+- `ENV_NAME`: Elastic Beanstalk environment name
+- `DB_PASSWORD`: Database password
 
-- S3
-- Elastic Beanstalk
-- RDS
-- IAM
-- CloudFormation
-- Cost Explorer
+## Integration with Infrastructure
+
+This workflow assumes AWS infrastructure has been provisioned using Terraform as described in the `/terraform` directory. The workflow does not create infrastructure, but deploys application code to existing resources.
+
+## Monitoring Deployments
+
+Deployment status and logs can be monitored in the GitHub repository's "Actions" tab. Each workflow run provides detailed information about the deployment process and any errors encountered.

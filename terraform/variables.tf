@@ -13,13 +13,13 @@ variable "aws_profile" {
 variable "app_name" {
   description = "Name of the Elastic Beanstalk application"
   type        = string
-  default     = "renewable-energy-app"
+  default     = "renewable-energy-application"
 }
 
 variable "env_name" {
   description = "Name of the Elastic Beanstalk environment"
   type        = string
-  default     = "production-env"
+  default     = "production-environment"
 }
 
 variable "solution_stack" {

@@ -188,7 +188,7 @@ resource "aws_db_instance" "database" {
   identifier           = "renewable-db-${random_id.suffix.hex}"
   engine               = "mysql"
   engine_version       = "8.0.35"
-  instance_class       = "db.t3.micro" # Free tier eligible
+  instance_class       = "db.t3.micro"
   allocated_storage    = 20
   db_name              = var.db_name
   username             = var.db_user
@@ -331,7 +331,6 @@ resource "aws_elastic_beanstalk_environment" "env" {
   solution_stack_name = var.solution_stack
   version_label       = aws_elastic_beanstalk_application_version.init_version.name
   
-  # Free tier instance
   setting {
     namespace = "aws:autoscaling:launchconfiguration"
     name      = "InstanceType"
@@ -351,7 +350,7 @@ resource "aws_elastic_beanstalk_environment" "env" {
     value     = aws_security_group.eb_sg.name
   }
   
-  # Single instance environment (free tier)
+  # Single instance environment 
   setting {
     namespace = "aws:elasticbeanstalk:environment"
     name      = "EnvironmentType"

@@ -68,7 +68,6 @@ def read_energy_generation(
     Retrieve energy generation records
     """
     try:
-        # Get the user's projects
         user_id = current_user.id if current_user else None
         
         if user_id:
@@ -79,7 +78,6 @@ def read_energy_generation(
             if not project_ids:
                 return []
                 
-            # Base query filtering by the user's projects
             query = db.query(EnergyGeneration).filter(EnergyGeneration.project_id.in_(project_ids))
             
             # Apply specific project_id filter if provided
@@ -91,10 +89,8 @@ def read_energy_generation(
                     )
                 query = query.filter(EnergyGeneration.project_id == project_id)
         else:
-            # For non-authenticated users, don't filter by project
             query = db.query(EnergyGeneration)
             
-            # But still apply specific project filter if provided
             if project_id:
                 query = query.filter(EnergyGeneration.project_id == project_id)
         
@@ -130,10 +126,8 @@ def get_daily_generation(
     Get daily aggregated energy generation data
     """
     try:
-        # Get the user's projects if authenticated
         user_id = current_user.id if current_user else None
         
-        # Default date range
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=30)
         if not end_date:
@@ -165,13 +159,11 @@ def get_daily_generation(
                     )
                 query = query.filter(EnergyGeneration.project_id == project_id)
         else:
-            # For non-authenticated users, don't filter by project
             query = db.query(EnergyGeneration).filter(
                 EnergyGeneration.timestamp >= start_date,
                 EnergyGeneration.timestamp <= end_date
             )
             
-            # But still apply specific project filter if provided
             if project_id:
                 query = query.filter(EnergyGeneration.project_id == project_id)
         
@@ -244,10 +236,8 @@ def get_weekly_generation(
     If start_date and end_date are not provided, defaults to the last 90 days.
     """
     try:
-        # Get the user's projects if authenticated
         user_id = current_user.id if current_user else None
         
-        # Default date range
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=90)
         if not end_date:
@@ -285,13 +275,11 @@ def get_weekly_generation(
                     )
                 query = query.filter(EnergyGeneration.project_id == project_id)
         else:
-            # For non-authenticated users, don't filter by project
             query = db.query(EnergyGeneration).filter(
                 EnergyGeneration.timestamp >= start_date,
                 EnergyGeneration.timestamp <= end_date
             )
             
-            # But still apply specific project filter if provided
             if project_id:
                 query = query.filter(EnergyGeneration.project_id == project_id)
         

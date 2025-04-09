@@ -234,31 +234,95 @@ docker compose down -v
 
 ## Deployment to AWS
 
-This project can be deployed to AWS Free Tier resources using Terraform for infrastructure as code and GitHub Actions for CI/CD automation.
+This project can be deployed using Terraform for infrastructure as code and GitHub Actions for CI/CD automation.
 
 ### AWS Architecture
 
 - **Frontend**: S3 bucket with CloudFront distribution (HTTPS enabled)
 - **Backend API**: Elastic Beanstalk running Python FastAPI application
-- **Database**: RDS MySQL instance (db.t3.micro - Free Tier eligible)
+- **Database**: RDS MySQL instance (db.t3.micro)
 - **Security**: IAM roles, security groups, HTTPS configuration
 - **HTTPS for Backend**: Manually configured through CloudFront after initial infrastructure setup
 
-### Deployment Methods
+## Infrastructure as Code with Terraform
 
-1. **Automated Deployment with GitHub Actions**:
+This project uses Terraform to provision and manage all AWS infrastructure in a consistent, repeatable way.
 
-   - Terraform automatically provisions AWS infrastructure
-   - Frontend is built and deployed to S3/CloudFront
-   - Backend is packaged and deployed to Elastic Beanstalk
-   - Database migrations and seeding handled automatically
+### Terraform Configuration
 
-2. **Manual Deployment**:
-   - Terraform scripts for infrastructure provisioning
-   - Step-by-step commands for AWS resources setup
-   - Database migration and initial data import
+Our Terraform setup (`/terraform` directory) automates the creation of:
 
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+- **S3 and CloudFront**: Static hosting with global CDN for the frontend
+- **Elastic Beanstalk**: Managed application platform for the Python backend
+- **RDS MySQL**: Managed database service for application data
+- **Security Groups**: Network access control for components
+- **IAM Roles**: Least-privilege access control
+
+### Key Benefits
+
+- **Reproducible Environments**: Identical staging and production setups
+- **Version Control**: Infrastructure changes tracked alongside code
+- **Dependency Management**: Automatic handling of resource dependencies
+- **State Management**: Tracking of deployed resources and their configurations
+
+### Deployment Process
+
+1. **Initialize**: `terraform init` to set up the Terraform environment
+2. **Plan**: `terraform plan` to preview infrastructure changes
+3. **Apply**: `terraform apply` to create or modify AWS resources
+4. **Destroy**: `terraform destroy` to tear down all resources when needed
+
+The Terraform configuration is designed to work within AWS Free Tier limits while providing a production-ready architecture.
+
+## CI/CD with GitHub Actions
+
+This project uses GitHub Actions to automate the deployment process, ensuring consistent and reliable deployments.
+
+### Workflow Configuration
+
+Our GitHub Actions workflow (`.github/workflows/deploy.yml`) handles the complete deployment process:
+
+1. **Triggers**:
+
+   - Automatically runs on push to the `main` branch
+   - Can be manually triggered via workflow_dispatch
+
+2. **Frontend Deployment**:
+
+   - Sets up Node.js environment
+   - Installs dependencies
+   - Builds the React application with production optimization
+   - Deploys built assets to S3
+   - Invalidates CloudFront cache to ensure latest content is served
+
+3. **Backend Deployment**:
+
+   - Sets up Python environment
+   - Installs dependencies
+   - Creates deployment package (zip)
+   - Uploads package to S3
+   - Creates new Elastic Beanstalk application version
+   - Updates Elastic Beanstalk environment with the new version
+   - Configures environment variables securely using GitHub Secrets
+
+4. **Security Considerations**:
+   - All sensitive data (AWS credentials, database passwords) stored as GitHub Secrets
+   - Limited IAM permissions following principle of least privilege
+   - Automated environment-specific configuration
+
+### Required GitHub Secrets
+
+The workflow requires these secrets:
+
+- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`: AWS credentials
+- `S3_BUCKET`: Frontend bucket name
+- `EB_BUCKET`: Elastic Beanstalk deployment artifact bucket
+- `APP_NAME` and `ENV_NAME`: Elastic Beanstalk application and environment names
+- `DB_PASSWORD`: Database password
+
+### Monitoring Deployments
+
+Deployment progress can be monitored in the "Actions" tab of the GitHub repository.
 
 ## License
 

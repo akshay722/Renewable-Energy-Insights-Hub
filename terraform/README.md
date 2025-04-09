@@ -7,33 +7,38 @@ This configuration uses AWS Free Tier resources to deploy the full Renewable Ene
 To avoid security group circular dependency issues, this configuration allows Elastic Beanstalk to create its own security groups.
 
 1. Initialize Terraform:
+
    ```bash
    terraform init
    ```
 
 2. Add your database password in a `terraform.tfvars` file:
+
    ```
    db_password = "your-secure-password"
    ```
 
 3. Deploy:
+
    ```bash
    terraform plan -var-file=terraform.tfvars
    terraform apply -var-file=terraform.tfvars
    ```
 
 4. Import database data (init-db.sql):
+
    ```bash
    # Get database endpoint
    DB_ENDPOINT=$(terraform output -raw database_endpoint)
    DB_USER=$(terraform output -raw rds_username)
    DB_NAME=$(terraform output -raw database_name)
-   
+
    # Import data
    mysql -h $DB_ENDPOINT -u $DB_USER -p $DB_NAME < ../init-db.sql
    ```
 
 5. After deployment succeeds:
+
    - Note the security group ID that Elastic Beanstalk created (find it in the AWS Console)
    - Consider adding a specific security group rule for that ID to restrict database access
    - This can be done by modifying the Terraform configuration or directly in the AWS Console
@@ -58,6 +63,7 @@ The workflow in `.github/workflows/deploy.yml` handles:
 2. Packaging and deploying the backend to Elastic Beanstalk
 
 Add these GitHub Secrets:
+
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `S3_BUCKET`

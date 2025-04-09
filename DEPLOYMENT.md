@@ -32,8 +32,8 @@ The recommended deployment method is using Terraform to provision all AWS resour
 
    ```
    aws_region = "us-east-1"
-   app_name = "renewable-energy-app"
-   env_name = "production-env"
+   app_name = "renewable-energy-application"
+   env_name = "production-environment"
    frontend_bucket_name = "renewable-energy-frontend"
    db_name = "renewable_energy_db_sql"
    db_user = "admin"
@@ -114,7 +114,7 @@ While Terraform is recommended, you can also deploy manually:
    cd backend
    pip install awsebcli
    eb init renewable-energy-backend --platform python-3.9
-   eb create production-env
+   eb create production-environment
    ```
 
 ### Frontend Deployment
@@ -175,7 +175,7 @@ terraform destroy -var-file=terraform.tfvars
 aws cloudfront delete-distribution --id <distribution-id> --if-match <etag>
 aws s3 rm s3://renewable-energy-frontend --recursive
 aws s3 rb s3://renewable-energy-frontend
-eb terminate production-env
+eb terminate production-environment
 aws rds delete-db-instance --db-instance-identifier renewable-energy-db --skip-final-snapshot
 ```
 

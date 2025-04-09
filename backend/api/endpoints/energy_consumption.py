@@ -67,7 +67,6 @@ def read_energy_consumption(
     Retrieve energy consumption records for authenticated user
     """
     try:
-        # Get user's projects
         user_projects = db.query(Project.id).filter(Project.user_id == current_user.id).all()
         project_ids = [p.id for p in user_projects]
         
@@ -116,7 +115,6 @@ def get_daily_consumption(
     Get daily aggregated energy consumption for authenticated user
     """
     try:
-        # Get user's projects
         user_projects = db.query(Project.id).filter(Project.user_id == current_user.id).all()
         project_ids = [p.id for p in user_projects]
         

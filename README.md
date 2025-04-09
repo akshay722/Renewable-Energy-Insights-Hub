@@ -212,25 +212,31 @@ docker compose down -v
 
 2. **Energy Shifting Optimization**: Add intelligent algorithms to suggest optimal times for shifting energy usage to periods of peak renewable generation.
 
-3. **Comprehensive Testing Suite**: Develop end-to-end, integration, and unit tests to ensure application reliability and facilitate future development.
+3. **Battery Storage Management**: Incorporate battery storage systems monitoring and optimization to track charge/discharge cycles, efficiency, and state of health.
 
-4. **Infrastructure Scaling**: Enhance AWS deployment to support higher traffic and data volumes while maintaining cost-efficiency:
+4. **Energy Flow Visualization**: Add interactive diagrams showing real-time energy flows between generation sources, storage systems, consumption points, and grid connections.
+
+5. **Storage ROI Calculator**: Implement tools to calculate return on investment for different energy storage solutions based on usage patterns and local energy prices.
+
+6. **Comprehensive Testing Suite**: Develop end-to-end, integration, and unit tests to ensure application reliability and facilitate future development.
+
+7. **Infrastructure Scaling**: Enhance AWS deployment to support higher traffic and data volumes while maintaining cost-efficiency:
 
    - Auto-scaling for Elastic Beanstalk
    - Database read replicas for high query loads
    - CloudFront optimization for global access
 
-5. **Mobile Application**: Develop native mobile applications for iOS and Android.
+8. **Mobile Application**: Develop native mobile applications for iOS and Android.
 
-6. **Real-time Integrations**: Add support for IoT device integration for real-time data collection.
+9. **Real-time Integrations**: Add support for IoT device integration for real-time data collection.
 
-7. **Energy Trading**: Implement simulated or real energy trading features for surplus renewable energy.
+10. **Energy Trading**: Implement simulated or real energy trading features for surplus renewable energy.
 
-8. **Additional Visualizations**: Expand data visualization options with more chart types and reports.
+11. **Additional Visualizations**: Expand data visualization options with more chart types and reports.
 
-9. **Enhanced User Management**: Add support for teams and organizations with role-based access control.
+12. **Enhanced User Management**: Add support for teams and organizations with role-based access control.
 
-10. **Public API**: Create a public API for third-party integrations.
+13. **Public API**: Create a public API for third-party integrations.
 
 ## Deployment to AWS
 

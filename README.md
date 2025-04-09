@@ -117,6 +117,26 @@ The MySQL database contains the following main tables:
 
 If you prefer to run components separately for development:
 
+### Prerequisites for Manual Setup
+
+Before proceeding with manual setup, ensure you have the following installed:
+
+1. **Python 3.10 or later**:
+
+   - **Windows**: Download and install from [python.org](https://www.python.org/downloads/windows/)
+   - **macOS**: `brew install python@3.10` (with [Homebrew](https://brew.sh/))
+   - **Linux (Ubuntu/Debian)**: `sudo apt update && sudo apt install python3.10 python3.10-venv python3-pip`
+
+2. **Node.js 18 or later**:
+
+   - **All platforms**: Download from [nodejs.org](https://nodejs.org/)
+   - **Alternative**: Use [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions
+
+3. **MySQL 8.0**:
+   - **Windows**: Download MySQL Installer from [dev.mysql.com](https://dev.mysql.com/downloads/installer/)
+   - **macOS**: `brew install mysql@8.0`
+   - **Linux**: `sudo apt install mysql-server-8.0`
+
 ### Database Setup
 
 1. Install MySQL (version 8.0 recommended)
@@ -136,11 +156,21 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Configure database connection in .env
-echo "DB_USER=root
+# Windows (Command Prompt)
+echo DB_USER=root> .env
+echo DB_PASSWORD=your_password>> .env
+echo DB_HOST=localhost>> .env
+echo DB_PORT=3306>> .env
+echo DB_NAME=renewable_energy_db_sql>> .env
+
+# Linux/macOS
+cat > .env << EOF
+DB_USER=root
 DB_PASSWORD=your_password
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=renewable_energy_db_sql" > .env
+DB_NAME=renewable_energy_db_sql
+EOF
 
 # Start the backend server
 python -m uvicorn main:app --reload

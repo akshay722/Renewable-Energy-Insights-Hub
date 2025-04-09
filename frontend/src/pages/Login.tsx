@@ -43,22 +43,35 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: "var(--color-background)" }}
+    >
+      <div
+        className="max-w-md w-full space-y-8 p-8 rounded-lg shadow-lg"
+        style={{ backgroundColor: "var(--color-card-bg)" }}
+      >
         <div className="text-center">
           <img
             src="/renewable.png"
             className="h-12 w-12 mx-auto text-primary"
             alt="Renewable Energy Insights Hub Logo"
           />
-          <h2 className="mt-4 text-3xl font-extrabold text-gray-900">
+          <h2
+            className="mt-4 text-3xl font-extrabold"
+            style={{ color: "var(--color-text)" }}
+          >
             Sign in to your account
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p
+            className="mt-2 text-sm"
+            style={{ color: "var(--color-text-light)" }}
+          >
             Or{" "}
             <Link
               to="/register"
-              className="font-medium text-primary hover:text-primary-dark"
+              className="font-medium hover:text-primary-dark"
+              style={{ color: "var(--color-primary)" }}
             >
               create a new account
             </Link>
@@ -68,7 +81,11 @@ const Login = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div
-              className="bg-red-50 text-red-700 p-3 rounded-md text-sm"
+              className="p-3 rounded-md text-sm cursor-pointer"
+              style={{
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                color: "var(--color-error)",
+              }}
               onClick={clearError}
             >
               {error}
@@ -146,7 +163,10 @@ const Login = () => {
         </form>
 
         {/* Demo account info */}
-        <div className="mt-4 text-center text-sm text-gray-600 border-t pt-4">
+        <div
+          className="mt-4 text-center text-sm border-t pt-4"
+          style={{ color: "var(--color-text-light)" }}
+        >
           <p>Demo Account:</p>
           <p>Email: demo@example.com</p>
           <p>Password: password123</p>

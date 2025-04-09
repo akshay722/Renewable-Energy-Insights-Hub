@@ -5,7 +5,7 @@ import {
   Legend,
   ChartData,
 } from "chart.js";
-import { Pie, Doughnut } from "react-chartjs-2";
+import { Doughnut } from "react-chartjs-2";
 import { useMemo } from "react";
 
 // Register ChartJS components
@@ -14,7 +14,6 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 interface SourceDistributionChartProps {
   data: Record<string, number>;
   title?: string;
-  chartType?: "pie" | "doughnut";
   height?: number;
   showGreenVsNonGreen?: boolean;
   resolutionControls?: React.ReactNode;
@@ -72,7 +71,6 @@ const defaultColors = [
 const SourceDistributionChart = ({
   data,
   title = "Energy Source Distribution",
-  chartType = "doughnut",
   height = 300,
   showGreenVsNonGreen = false,
   resolutionControls,
@@ -82,7 +80,7 @@ const SourceDistributionChart = ({
   };
 
   // Prepare chart data
-  const chartData = useMemo<ChartData<"pie" | "doughnut">>(() => {
+  const chartData = useMemo<ChartData<"doughnut">>(() => {
     if (showGreenVsNonGreen) {
       const nonGreenSources = ["grid"];
 
@@ -144,6 +142,7 @@ const SourceDistributionChart = ({
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    cutout: "60%", // Makes the doughnut hole larger
     plugins: {
       legend: {
         position: "top" as const,
@@ -174,9 +173,16 @@ const SourceDistributionChart = ({
   const singleSourceValue = isSingleSource ? Object.values(data)[0] : null;
 
   return (
-    <div style={{ height }}>
+    <div style={{ height }} className="flex flex-col">
       <div className="mb-2 flex justify-between items-center">
-        {title && <h3 className="text-lg font-semibold">{title}</h3>}
+        {title && (
+          <h3
+            className="text-lg font-semibold"
+            style={{ color: "var(--color-text)" }}
+          >
+            {title}
+          </h3>
+        )}
         {resolutionControls}
       </div>
 
@@ -193,44 +199,65 @@ const SourceDistributionChart = ({
           >
             100%
           </div>
-          <p className="text-lg font-medium text-gray-700">
+          <p
+            className="text-lg font-medium"
+            style={{ color: "var(--color-text-light)" }}
+          >
             All energy comes from{" "}
             <span className="font-bold">
               {formatSourceName(singleSourceName!)}
             </span>
           </p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p
+            className="text-sm  mt-1"
+            style={{ color: "var(--color-text-light)" }}
+          >
             {singleSourceValue!.toFixed(1)} kWh
           </p>
         </div>
-      ) : chartType === "pie" ? (
-        <Pie
-          data={chartData as ChartData<"pie">}
-          options={{
-            ...options,
-            plugins: {
-              ...options.plugins,
-              title: {
-                ...options.plugins.title,
-                display: false,
-              },
-            },
-          }}
-        />
       ) : (
-        <Doughnut
-          data={chartData as ChartData<"doughnut">}
-          options={{
-            ...options,
-            plugins: {
-              ...options.plugins,
-              title: {
-                ...options.plugins.title,
-                display: false,
+        <div className="relative" style={{ width: "100%", height: "100%" }}>
+          <Doughnut
+            data={chartData}
+            options={{
+              ...options,
+              plugins: {
+                ...options.plugins,
+                title: {
+                  ...options.plugins.title,
+                  display: false,
+                },
               },
-            },
-          }}
-        />
+            }}
+          />
+          <div
+            className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center flex-col"
+            style={{
+              pointerEvents: "none",
+              position: "absolute",
+              left: "50%",
+              top: "55%",
+              transform: "translate(-50%, -50%)",
+              width: "40%", // Control the size of the centered text area
+              height: "40%",
+            }}
+          >
+            <div
+              className="text-2xl font-bold"
+              style={{ color: "var(--color-text)" }}
+            >
+              {Object.values(data)
+                .reduce((acc, val) => acc + val, 0)
+                .toFixed(1)}
+            </div>
+            <div
+              className="text-sm"
+              style={{ color: "var(--color-text-light)" }}
+            >
+              kWh
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

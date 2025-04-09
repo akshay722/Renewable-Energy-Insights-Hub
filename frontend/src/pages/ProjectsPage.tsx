@@ -75,7 +75,7 @@ const ProjectsPage = () => {
         </h1>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition"
+          className="btn btn-primary px-4 py-2 rounded-md transition"
         >
           Add Project
         </button>
@@ -85,10 +85,7 @@ const ProjectsPage = () => {
       {showCreateForm && (
         <div
           className="card"
-          style={{
-            backgroundColor: "var(--color-primary-light)",
-            opacity: 0.1,
-          }}
+          style={{ backgroundColor: "var(--color-card-bg)" }}
         >
           <h2
             className="text-xl font-semibold mb-4"
@@ -134,7 +131,7 @@ const ProjectsPage = () => {
                   setShowCreateForm(false);
                   resetForm();
                 }}
-                className="px-3 py-1.5 rounded-md text-sm"
+                className="btn px-3 py-1.5 rounded-md text-sm"
                 style={{
                   backgroundColor: "var(--color-background-dark)",
                   color: "var(--color-text)",
@@ -144,7 +141,7 @@ const ProjectsPage = () => {
               </button>
               <button
                 onClick={createProject}
-                className="px-3 py-1.5 bg-primary text-white rounded-md text-sm"
+                className="btn btn-primary px-3 py-1.5 rounded-md text-sm"
                 disabled={!newProjectName.trim()}
               >
                 Create Project

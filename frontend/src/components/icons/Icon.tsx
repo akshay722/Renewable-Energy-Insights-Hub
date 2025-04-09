@@ -6,6 +6,7 @@ export type IconName =
   | "dashboard"
   | "projects"
   | "profile"
+  | "menu"
   | "close"
   | "logout"
   | "back"
@@ -81,7 +82,17 @@ const Icon: React.FC<IconProps> = ({
           />
         </svg>
       );
-
+    case "menu":
+      return (
+        <svg {...svgProps}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 12h16m-7 6h7"
+          />
+        </svg>
+      );
     case "profile":
       return (
         <svg {...svgProps}>
@@ -110,9 +121,16 @@ const Icon: React.FC<IconProps> = ({
       return (
         <svg {...svgProps}>
           <path
-            d="M17 16L21 12M21 12L17 8M21 12L7 12M13 16V17C13 18.6569 11.6569 20 10 20H6C4.34315 20 3 18.6569 3 17V7C3 5.34315 4.34315 4 6 4H10C11.6569 4 13 5.34315 13 7V8"
-            stroke="#6dae19"
-            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17 16l4-4m0 0l-4-4m4 4H7"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 20H5a2 2 0 01-2-2V6a2 2 0 012-2h7"
           />
         </svg>
       );

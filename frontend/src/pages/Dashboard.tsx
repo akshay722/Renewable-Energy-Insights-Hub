@@ -138,7 +138,7 @@ const Dashboard = () => {
           className="text-2xl font-bold mb-4 md:mb-0"
           style={{ color: "var(--color-text)" }}
         >
-          Dashboard
+          Portfolio
         </h1>
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           {/* Project selector */}
@@ -225,9 +225,9 @@ const Dashboard = () => {
             style={{ color: "var(--color-text)" }}
           >
             {Object.keys(consumptionBySource).length > 0
-              ? "Consumption Source Breakdown"
+              ? "Energy Consumption by Source"
               : Object.keys(generationBySource).length > 0
-              ? "Generation Source Breakdown"
+              ? "Energy Generation by Source"
               : "Energy Source Breakdown"}
           </h2>
           {isLoading ? (
@@ -239,7 +239,6 @@ const Dashboard = () => {
             // Show consumption data if available
             <SourceDistributionChart
               data={consumptionBySource}
-              chartType="doughnut"
               height={260}
               title=""
             />
@@ -247,7 +246,6 @@ const Dashboard = () => {
             // Show generation data if consumption isn't available
             <SourceDistributionChart
               data={generationBySource}
-              chartType="doughnut"
               height={260}
               title=""
             />
@@ -265,7 +263,7 @@ const Dashboard = () => {
             className="text-xl font-semibold mb-4"
             style={{ color: "var(--color-text)" }}
           >
-            Consumption & Generation
+            Renewable Generation vs Consumption
           </h2>
           {isLoading ? (
             <div

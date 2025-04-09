@@ -51,7 +51,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
           <div className="flex h-16 items-center justify-between px-4 md:hidden">
             <div className="flex items-center">
               <img
-                src="/solar-panel.svg"
+                src="/renewable.png"
                 className="h-8 w-8 text-primary"
                 alt="Renewable Energy Insights Hub Logo"
               />

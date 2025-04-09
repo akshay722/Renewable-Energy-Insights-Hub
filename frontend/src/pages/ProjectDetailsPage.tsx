@@ -164,7 +164,7 @@ const ProjectDetailsPage = () => {
         </div>
 
         {/* Chart Area */}
-        <div className="h-[400px]">
+        <div className={chartView === "graph" ? "h-[410px]" : ""}>
           {isLoading ? (
             <div
               className="animate-pulse h-full rounded"
@@ -196,7 +196,6 @@ const ProjectDetailsPage = () => {
                     <SourceDistributionChart
                       key={`pie-consumption-${sourceFilters.join("-")}`}
                       data={consumptionBySource}
-                      chartType="pie"
                       height={300}
                       title=""
                       resolutionControls={null}
@@ -237,7 +236,6 @@ const ProjectDetailsPage = () => {
                     <SourceDistributionChart
                       key={`pie-generation-${sourceFilters.join("-")}`}
                       data={generationBySource}
-                      chartType="pie"
                       height={300}
                       title=""
                       resolutionControls={null}
